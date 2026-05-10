@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0d0d">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>SEM · IMV</title>
+<style>
+:root{
+  --bg:#0d0d0d;--surface:#1a1a1a;--surface2:#242424;--surface3:#2e2e2e;
+  --border:#333;--text:#f0f0f0;--muted:#888;--muted2:#555;
+  --red:#e53935;--red-d:#b71c1c;--red-l:#ffcdd2;
+  --yellow:#fdd835;--yellow-d:#f9a825;--yellow-l:#fff9c4;
+  --green:#43a047;--green-d:#1b5e20;--green-l:#c8e6c9;
+  --black:#1a1a1a;--grey:#607d8b;
+  --blue:#1e88e5;--blue-d:#0d47a1;
+  --orange:#fb8c00;--orange-d:#e65100;
+  --radius:10px;--radius-sm:6px;
+  --nav-h:62px;--header-h:52px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px}
+/* LAYOUT */
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+#topbar{height:var(--header-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 14px;flex-shrink:0;z-index:10}
+#topbar .logo{font-size:18px;font-weight:800;letter-spacing:1px;color:var(--red)}
+#topbar .logo span{color:var(--text);font-weight:400}
+#timer-display{font-family:monospace;font-size:17px;font-weight:700;color:var(--yellow);display:none}
+#level-pill{font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;display:none;text-transform:uppercase}
+.level-I #level-pill{display:block;background:var(--orange);color:#000}
+.level-II #level-pill{display:block;background:var(--red);color:#fff}
+.level-III #level-pill,.level-IV #level-pill{display:block;background:#7b1fa2;color:#fff}
+#content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+#navbar{height:var(--nav-h);background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:stretch;flex-shrink:0}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:10px;font-weight:600;padding:6px 2px;transition:color .15s}
+.nav-btn .icon{font-size:20px;line-height:1}
+.nav-btn.active{color:var(--red)}
+.nav-btn.active .icon{transform:translateY(-1px)}
+/* TABS */
+.tab{display:none;padding:14px 14px 20px;min-height:100%}
+.tab.active{display:block}
+/* CARDS */
+.card{background:var(--surface);border-radius:var(--radius);padding:14px;margin-bottom:12px;border:1px solid var(--border)}
+.card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:10px}
+.card h3{font-size:15px;font-weight:700;margin-bottom:8px}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 18px;border-radius:var(--radius-sm);border:none;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s;width:100%}
+.btn:active{opacity:.75}
+.btn-red{background:var(--red);color:#fff}
+.btn-orange{background:var(--orange);color:#000}
+.btn-green{background:var(--green);color:#fff}
+.btn-grey{background:var(--surface3);color:var(--text);border:1px solid var(--border)}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-sm{padding:7px 12px;font-size:13px;width:auto}
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-red{background:var(--red);color:#fff}
+.badge-yellow{background:var(--yellow);color:#000}
+.badge-green{background:var(--green);color:#fff}
+.badge-black{background:#333;color:#fff}
+.badge-blue{background:var(--blue);color:#fff}
+.badge-orange{background:var(--orange);color:#000}
+/* TRIAGE COUNTER */
+.triage-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.triage-box{border-radius:var(--radius);padding:14px 10px;text-align:center;position:relative;user-select:none;-webkit-user-select:none}
+.triage-box .t-num{font-size:42px;font-weight:900;line-height:1;font-family:monospace}
+.triage-box .t-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px;opacity:.9}
+.triage-box .t-controls{display:flex;gap:6px;justify-content:center;margin-top:8px}
+.triage-box .t-btn{width:36px;height:36px;border-radius:50%;border:none;font-size:20px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.box-red{background:var(--red);color:#fff}.box-red .t-btn{background:rgba(0,0,0,.25);color:#fff}
+.box-yellow{background:var(--yellow);color:#000}.box-yellow .t-btn{background:rgba(0,0,0,.15);color:#000}
+.box-green{background:var(--green);color:#fff}.box-green .t-btn{background:rgba(0,0,0,.25);color:#fff}
+.box-black{background:#333;color:#fff;border:1px solid #555}.box-black .t-btn{background:rgba(255,255,255,.15);color:#fff}
+.box-grey{background:var(--grey);color:#fff}.box-grey .t-btn{background:rgba(0,0,0,.25);color:#fff}
+/* START FLOWCHART */
+.flow-step{background:var(--surface2);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;border-left:4px solid var(--border)}
+.flow-step.step-action{border-left-color:var(--blue)}
+.flow-step.step-red{border-left-color:var(--red)}
+.flow-step.step-yellow{border-left-color:var(--yellow)}
+.flow-step.step-green{border-left-color:var(--green)}
+.flow-step.step-black{border-left-color:#555}
+.flow-step .fs-q{font-weight:700;font-size:14px;margin-bottom:6px}
+.flow-step .fs-a{display:flex;flex-direction:column;gap:4px}
+.flow-step .fs-a span{font-size:13px;padding:4px 8px;border-radius:4px;background:var(--surface3)}
+.flow-step .fs-a .yes{color:var(--green)}
+.flow-step .fs-a .no{color:var(--red)}
+/* ORGANIGRAMA */
+.org-tree{display:flex;flex-direction:column;align-items:center;gap:0;padding:10px 0}
+.org-node{display:flex;flex-direction:column;align-items:center;gap:0;width:100%}
+.org-box{border-radius:var(--radius-sm);padding:8px 12px;text-align:center;font-size:12px;font-weight:700;min-width:120px;max-width:180px;position:relative}
+.org-box .ob-ind{font-size:10px;font-weight:400;opacity:.8;margin-top:2px}
+.org-line-v{width:2px;height:16px;background:var(--border);margin:0 auto}
+.org-children{display:flex;gap:6px;justify-content:center;width:100%;position:relative;padding-top:16px}
+.org-children::before{content:'';position:absolute;top:0;left:10%;right:10%;height:2px;background:var(--border)}
+.org-child{display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative}
+.org-child::before{content:'';position:absolute;top:-16px;left:50%;width:2px;height:16px;background:var(--border)}
+.ob-cecos{background:#7b1fa2;color:#fff}
+.ob-cas{background:var(--orange);color:#000}
+.ob-triage{background:var(--red);color:#fff}
+.ob-red{background:var(--red-d);color:#fff}
+.ob-yellow{background:var(--yellow-d);color:#000}
+.ob-green{background:var(--green-d);color:#fff}
+.ob-evacuation{background:var(--blue);color:#fff}
+.ob-access{background:var(--grey);color:#fff}
+.ob-llink{background:var(--surface3);color:var(--text);border:1px solid var(--border)}
+/* CHECKLIST */
+.cl-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.cl-item:last-child{border-bottom:none}
+.cl-item input[type=checkbox]{width:20px;height:20px;min-width:20px;accent-color:var(--red);margin-top:1px;cursor:pointer}
+.cl-item label{font-size:13px;line-height:1.4;cursor:pointer;flex:1}
+.cl-item.done label{text-decoration:line-through;opacity:.45}
+.cl-progress{height:6px;background:var(--surface3);border-radius:3px;margin-bottom:10px;overflow:hidden}
+.cl-progress-bar{height:100%;background:var(--green);border-radius:3px;transition:width .3s}
+/* RADIO / CHANNELS */
+.channel-card{border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;border:1px solid var(--border)}
+.ch-name{font-size:16px;font-weight:800;font-family:monospace;color:var(--yellow)}
+.ch-desc{font-size:12px;color:var(--muted);margin-top:2px}
+.ch-use{font-size:13px;margin-top:6px}
+.ch-levels{display:flex;gap:5px;margin-top:6px}
+.kilo-table{width:100%;border-collapse:collapse}
+.kilo-table th{background:var(--surface3);color:var(--muted);font-size:11px;font-weight:700;text-align:left;padding:7px 10px;text-transform:uppercase}
+.kilo-table td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:top}
+.kilo-table tr:last-child td{border-bottom:none}
+.kilo-code{font-family:monospace;font-weight:800;color:var(--yellow);font-size:14px}
+/* COMM DIAGRAM */
+.comm-diagram{display:flex;flex-direction:column;align-items:center;gap:0;padding:6px 0}
+.comm-node{display:flex;flex-direction:column;align-items:center;width:100%}
+.comm-box{border-radius:8px;padding:8px 12px;text-align:center;min-width:140px;max-width:220px}
+.comm-box .cb-ind{font-size:13px;font-weight:900;font-family:monospace;letter-spacing:.5px}
+.comm-box .cb-rol{font-size:10px;margin-top:2px;opacity:.85;font-weight:600}
+.comm-box .cb-ch{font-size:10px;margin-top:3px;font-family:monospace;opacity:.7}
+.comm-arrow{display:flex;align-items:center;justify-content:center;gap:6px;padding:3px 0}
+.comm-arrow .ca-line{width:2px;height:20px;background:var(--border)}
+.comm-arrow .ca-ch{font-size:10px;font-family:monospace;font-weight:700;padding:1px 6px;border-radius:3px;background:rgba(253,216,53,.15);color:var(--yellow)}
+.comm-row{display:flex;gap:8px;justify-content:center;width:100%;position:relative;padding-top:18px}
+.comm-row::before{content:'';position:absolute;top:0;left:15%;right:15%;height:2px;background:var(--border)}
+.comm-child{display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative}
+.comm-child::before{content:'';position:absolute;top:-18px;left:50%;width:2px;height:18px;background:var(--border)}
+.cb-cecos{background:#7b1fa2;color:#fff}
+.cb-cas{background:var(--orange);color:#000}
+.cb-pe{background:var(--blue);color:#fff}
+.cb-ld{background:var(--surface3);color:var(--text);border:1px solid var(--border)}
+.cb-unit{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.cb-co{background:#37474f;color:#fff}
+/* SERVEIS TABLE */
+.serveis-table{width:100%;border-collapse:collapse}
+.serveis-table th{background:var(--surface3);color:var(--muted);font-size:11px;font-weight:700;text-align:left;padding:8px 10px;text-transform:uppercase}
+.serveis-table td{padding:10px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:top}
+.serveis-table tr:last-child td{border-bottom:none}
+.serv-icon{font-size:18px;text-align:center;width:32px}
+/* CONTACTS */
+.contact-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.contact-item:last-child{border-bottom:none}
+.ci-icon{width:40px;height:40px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.ci-info{flex:1;min-width:0}
+.ci-name{font-size:14px;font-weight:700}
+.ci-number{font-size:13px;color:var(--muted);font-family:monospace}
+.ci-call{background:var(--green);color:#fff;border:none;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal-box{background:var(--surface);border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;transform:translateY(100%);transition:transform .25s;max-height:88vh;overflow-y:auto}
+.modal-overlay.open .modal-box{transform:translateY(0)}
+.modal-title{font-size:18px;font-weight:800;margin-bottom:16px}
+/* LEVEL BTNS */
+.level-select-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.ls-btn{border-radius:var(--radius);padding:14px;border:2px solid transparent;background:var(--surface2);cursor:pointer;text-align:left;transition:border-color .15s}
+.ls-btn:active{opacity:.75}
+.ls-btn .ls-level{font-size:20px;font-weight:900;margin-bottom:4px}
+.ls-btn .ls-desc{font-size:11px;color:var(--muted);line-height:1.4}
+.ls-btn.l1{border-color:var(--orange)}.ls-btn.l1 .ls-level{color:var(--orange)}
+.ls-btn.l2{border-color:var(--red)}.ls-btn.l2 .ls-level{color:var(--red)}
+.ls-btn.l3{border-color:#ab47bc}.ls-btn.l3 .ls-level{color:#ab47bc}
+.ls-btn.l4{border-color:#7b1fa2}.ls-btn.l4 .ls-level{color:#ce93d8}
+/* TYPE SELECTOR */
+.type-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.type-btn{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 6px;text-align:center;cursor:pointer;font-size:11px;font-weight:600;color:var(--text)}
+.type-btn .type-icon{font-size:22px;display:block;margin-bottom:4px}
+.type-btn.selected{border-color:var(--red);background:rgba(229,57,53,.15)}
+/* ARMILLES */
+.vest-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.vest-card{border-radius:var(--radius-sm);padding:10px;border:1px solid var(--border)}
+.vest-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.vest-color{width:28px;height:20px;border-radius:3px;flex-shrink:0}
+.vest-title{font-size:12px;font-weight:700}
+.vest-role{font-size:11px;color:var(--muted);line-height:1.4}
+.vest-indicator{font-size:10px;font-family:monospace;color:var(--yellow);margin-top:4px;font-weight:700}
+/* MISC */
+.section-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:16px 0 8px}
+.section-title:first-child{margin-top:0}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.info-row:last-child{border-bottom:none}
+.info-row .ir-label{color:var(--muted)}
+.info-row .ir-val{font-weight:700;text-align:right;max-width:55%}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:3px;background:var(--surface3);color:var(--text);margin:2px}
+.alert-box{border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;font-size:13px;line-height:1.5}
+.alert-red{background:rgba(229,57,53,.15);border-left:3px solid var(--red);color:var(--red-l)}
+.alert-yellow{background:rgba(253,216,53,.1);border-left:3px solid var(--yellow);color:var(--yellow-l)}
+.alert-blue{background:rgba(30,136,229,.15);border-left:3px solid var(--blue);color:#bbdefb}
+.alert-green{background:rgba(67,160,71,.15);border-left:3px solid var(--green);color:var(--green-l)}
+.step-num{display:inline-flex;width:22px;height:22px;background:var(--red);color:#fff;border-radius:50%;align-items:center;justify-content:center;font-size:11px;font-weight:800;margin-right:6px;flex-shrink:0}
+.hidden{display:none!important}
+/* ROLE TABS */
+.role-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.role-tab{padding:6px 12px;border-radius:20px;border:1px solid var(--border);font-size:12px;font-weight:700;background:var(--surface2);color:var(--muted);cursor:pointer}
+.role-tab.active{background:var(--red);color:#fff;border-color:var(--red)}
+/* NORIA */
+.noria-step{display:flex;align-items:center;gap:10px;padding:10px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:6px}
+.noria-num{width:28px;height:28px;background:var(--blue);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
+.noria-text{font-size:13px;line-height:1.4}
+/* INCIDENT TYPE ORGANIGRAMS */
+.org-tab-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.otb{padding:6px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;background:var(--surface2);color:var(--muted);cursor:pointer;white-space:nowrap}
+.otb.active{background:var(--orange);color:#000;border-color:var(--orange)}
+/* scrollbar */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+<div id="app">
+<!-- TOP BAR -->
+<div id="topbar">
+  <div class="logo">SEM<span> · IMV</span></div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span id="timer-display">00:00:00</span>
+    <span id="level-pill">—</span>
+  </div>
+</div>
+<!-- CONTENT -->
+<div id="content">
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 1 · INICI
+═══════════════════════════════════════════════════ -->
+<section class="tab active" id="tab-inici">
+  <div id="panel-inactive">
+    <div class="card" style="text-align:center;padding:22px 14px">
+      <div style="font-size:40px;margin-bottom:10px">🚨</div>
+      <div style="font-size:20px;font-weight:800;margin-bottom:6px">SEM · Gestió d'IMV</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:18px">Protocol oficial SEM Catalunya</div>
+      <button class="btn btn-red" onclick="openActivationModal()" style="font-size:17px;padding:15px">⚡ ACTIVAR INCIDENT</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Criteris d'activació ràpida</div>
+      <div class="info-row"><span class="ir-label">≥6 víctimes greus (vermells)</span><span class="ir-val"><span class="badge badge-red">IMV</span></span></div>
+      <div class="info-row"><span class="ir-label">≥10 víctimes de qualsevol categoria</span><span class="ir-val"><span class="badge badge-red">IMV</span></span></div>
+      <div class="info-row"><span class="ir-label">RNBQ (sospita o confirmació)</span><span class="ir-val"><span class="badge badge-red">IMV</span></span></div>
+      <div class="info-row"><span class="ir-label">Cap de guàrdia CECOS ho determini</span><span class="ir-val"><span class="badge badge-orange">IMV</span></span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Canvi ràdio immediat (tots els nivells)</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 0">
+        <span style="font-size:24px">📡</span>
+        <div><div style="font-size:18px;font-weight:800;color:var(--yellow);font-family:monospace">EME1_CAT</div><div style="font-size:12px;color:var(--muted)">Canal operatiu IMV — activa en activar incident</div></div>
+      </div>
+    </div>
+  </div>
+  <div id="panel-active" class="hidden">
+    <div class="card" style="background:rgba(229,57,53,.1);border-color:var(--red)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span id="active-level-label" style="font-size:20px;font-weight:900;color:var(--red)">NIVELL —</span>
+        <button class="btn btn-grey btn-sm" onclick="closeIncident()">⛔ Tancar</button>
+      </div>
+      <div style="display:flex;gap:16px">
+        <div><div style="font-size:11px;color:var(--muted)">Temps actiu</div><div id="active-timer" style="font-size:22px;font-weight:800;font-family:monospace;color:var(--yellow)">00:00:00</div></div>
+        <div><div style="font-size:11px;color:var(--muted)">Tipus</div><div id="active-type" style="font-size:14px;font-weight:700">—</div></div>
+      </div>
+    </div>
+    <!-- Triage quick counters -->
+    <div class="triage-grid">
+      <div class="triage-box box-red">
+        <div class="t-num" id="qi-r">0</div><div class="t-label">🔴 Vermells</div>
+        <div class="t-controls">
+          <button class="t-btn" onclick="quickTriage('r',-1)">−</button>
+          <button class="t-btn" onclick="quickTriage('r',1)">+</button>
+        </div>
+      </div>
+      <div class="triage-box box-yellow">
+        <div class="t-num" id="qi-g">0</div><div class="t-label">🟡 Grocs</div>
+        <div class="t-controls">
+          <button class="t-btn" onclick="quickTriage('g',-1)">−</button>
+          <button class="t-btn" onclick="quickTriage('g',1)">+</button>
+        </div>
+      </div>
+      <div class="triage-box box-green">
+        <div class="t-num" id="qi-v">0</div><div class="t-label">🟢 Verds</div>
+        <div class="t-controls">
+          <button class="t-btn" onclick="quickTriage('v',-1)">−</button>
+          <button class="t-btn" onclick="quickTriage('v',1)">+</button>
+        </div>
+      </div>
+      <div class="triage-box box-black">
+        <div class="t-num" id="qi-n">0</div><div class="t-label">⬛ Negres</div>
+        <div class="t-controls">
+          <button class="t-btn" onclick="quickTriage('n',-1)">−</button>
+          <button class="t-btn" onclick="quickTriage('n',1)">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Total víctimes</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:36px;font-weight:900;font-family:monospace" id="total-victims">0</div>
+        <div style="text-align:right;font-size:12px;color:var(--muted)">Blancs: <span id="qi-b" style="color:var(--text);font-weight:700">0</span><br>
+          <button class="btn btn-grey btn-sm" style="margin-top:6px" onclick="quickTriage('b',1)">+ Blanc (il·lès)</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="active-channels-card">
+      <div class="card-title">Canals actius</div>
+      <div id="active-channels-list"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 2 · ACTIVACIÓ / NIVELLS
+═══════════════════════════════════════════════════ -->
+<section class="tab" id="tab-activacio">
+  <div class="section-title">Nivells IMV</div>
+  <div class="card">
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+      <div style="min-width:70px;padding:8px;border-radius:var(--radius-sm);background:var(--orange);text-align:center"><div style="font-size:18px;font-weight:900;color:#000">NIVELL I</div></div>
+      <div><div class="info-row" style="padding:3px 0;border:0"><span class="ir-label">Vermells</span><span class="ir-val">≥ 6</span></div>
+      <div class="info-row" style="padding:3px 0;border:0"><span class="ir-label">Qualsevol</span><span class="ir-val">≥ 10</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Recursos zona pròpia</div></div>
+    </div>
+    <div style="margin-bottom:6px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase">Activació inicial</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="tag">2× SVA/SVI</span><span class="tag">4× SVB</span><span class="tag">Hospitals referència (pre-alerta)</span>
+    </div>
+    <div style="margin-top:10px;margin-bottom:6px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase">Ràdio</div>
+    <span class="tag" style="background:rgba(253,216,53,.15);color:var(--yellow)">📡 EME1_CAT</span>
+    <div style="margin-top:10px;margin-bottom:6px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase">Avisos obligatoris</div>
+    <div style="font-size:13px;line-height:1.8">• Director/Coordinador Territorial<br>• Directora CECOR<br>• Pre-alerta hospitals / CUAP<br>• Pre-alerta psicòlegs<br>• Responsable assistencial al lloc</div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+      <div style="min-width:70px;padding:8px;border-radius:var(--radius-sm);background:var(--red);text-align:center"><div style="font-size:18px;font-weight:900;color:#fff">NIVELL II</div></div>
+      <div><div class="info-row" style="padding:3px 0;border:0"><span class="ir-label">Vermells</span><span class="ir-val">≥ 10</span></div>
+      <div class="info-row" style="padding:3px 0;border:0"><span class="ir-label">Qualsevol</span><span class="ir-val">10–100</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Recursos zona + zones contigües</div></div>
+    </div>
+    <div style="margin-bottom:6px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase">Activació inicial</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="tag">4× SVA/SVI</span><span class="tag">6× SVB</span><span class="tag">Unitats Lot territory</span>
+    </div>
+    <div style="margin-top:10px;margin-bottom:6px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase">Ràdio</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <span class="tag" style="background:rgba(253,216,53,.15);color:var(--yellow)">📡 EME1_CAT</span>
+      <span class="tag" style="background:rgba(30,136,229,.15);color:#90caf9">📡 D_1 (Comandaments)</span>
+      <span class="tag" style="background:rgba(67,160,71,.15);color:var(--green-l)">📡 EME2_CAT (Filiacions)</span>
+    </div>
+    <div style="margin-top:10px;margin-bottom:6px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase">Avisos addicionals</div>
+    <div style="font-size:13px;line-height:1.8">• Pre-alerta Direcció Àrea Serveis Especials<br>• Activació Psicòlegs<br>• Creació Taula IMV al CECOS<br>• Activació UCO</div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+      <div style="min-width:70px;padding:8px;border-radius:var(--radius-sm);background:#7b1fa2;text-align:center"><div style="font-size:16px;font-weight:900;color:#fff">NIVELL III</div></div>
+      <div><div class="info-row" style="padding:3px 0;border:0"><span class="ir-label">Vermells</span><span class="ir-val">≥ 100</span></div>
+      <div class="info-row" style="padding:3px 0;border:0"><span class="ir-label">Qualsevol</span><span class="ir-val">100–500</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Recursos tot el territori</div></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="tag">10× SVA/SVI</span><span class="tag">20× SVB</span><span class="tag">Tot el territori</span></div>
+    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+      <span class="tag" style="background:rgba(253,216,53,.15);color:var(--yellow)">📡 EME1_CAT</span>
+      <span class="tag" style="background:rgba(30,136,229,.15);color:#90caf9">📡 D_1</span>
+      <span class="tag" style="background:rgba(67,160,71,.15);color:var(--green-l)">📡 EME2_CAT</span>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <div style="min-width:70px;padding:8px;border-radius:var(--radius-sm);background:#4a148c;text-align:center"><div style="font-size:16px;font-weight:900;color:#ce93d8">NIVELL IV</div></div>
+      <div><div class="info-row" style="padding:3px 0;border:0"><span class="ir-label">Qualsevol</span><span class="ir-val">> 500</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Màxim de recursos. Pla de Catàstrofes.</div></div>
+    </div>
+  </div>
+
+  <div class="section-title">Tipus d'incident</div>
+  <div class="card">
+    <div id="tipo-grid" class="type-grid">
+      <div class="type-btn" data-tipo="atm" onclick="selectTipo(this)"><span class="type-icon">🚗</span>ATM / Multi-vehicle</div>
+      <div class="type-btn" data-tipo="ferroviari" onclick="selectTipo(this)"><span class="type-icon">🚆</span>Ferroviari/Metro</div>
+      <div class="type-btn" data-tipo="aeri" onclick="selectTipo(this)"><span class="type-icon">✈️</span>Aeri</div>
+      <div class="type-btn" data-tipo="incendi" onclick="selectTipo(this)"><span class="type-icon">🔥</span>Incendi/Explosió</div>
+      <div class="type-btn" data-tipo="rnbq" onclick="selectTipo(this)"><span class="type-icon">☢️</span>RNBQ</div>
+      <div class="type-btn" data-tipo="atemptat" onclick="selectTipo(this)"><span class="type-icon">💥</span>Atemptat/Tiroteig</div>
+      <div class="type-btn" data-tipo="catastrofe" onclick="selectTipo(this)"><span class="type-icon">🌊</span>Catàstrofe Natural</div>
+      <div class="type-btn" data-tipo="esfondrament" onclick="selectTipo(this)"><span class="type-icon">🏗️</span>Esfondrament</div>
+      <div class="type-btn" data-tipo="maritim" onclick="selectTipo(this)"><span class="type-icon">⛵</span>Marítim</div>
+    </div>
+    <div id="tipo-info" class="hidden" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 3 · TRIATGE
+═══════════════════════════════════════════════════ -->
+<section class="tab" id="tab-triatge">
+  <div class="role-tabs" id="triage-mode-tabs">
+    <button class="role-tab active" onclick="setTriageMode('start',this)">START (Bàsic)</button>
+    <button class="role-tab" onclick="setTriageMode('meta',this)">META (Avançat)</button>
+    <button class="role-tab" onclick="setTriageMode('counter',this)">Comptador</button>
+    <button class="role-tab" onclick="setTriageMode('segon',this)">2n Triatge</button>
+  </div>
+
+  <!-- START -->
+  <div id="triage-start">
+    <div class="alert-box alert-blue" style="margin-bottom:10px">
+      <strong>Mètode START</strong> · Max 60 seg/víctima · No aturis per tractar (excepte maniobres vitals bàsiques)<br>
+      <em style="font-size:12px">"Comença des d'on estiguis i no paris fins que acabis"</em>
+    </div>
+    <div class="flow-step step-green">
+      <div class="fs-q"><span class="step-num">1</span>Pot caminar?</div>
+      <div class="fs-a">
+        <span class="yes">✅ SÍ → <strong style="color:var(--green)">VERD</strong> (Prioritat 3 · Demorable) — Reagrupa en zona segura</span>
+        <span class="no">❌ NO → Continua valoració →</span>
+      </div>
+    </div>
+    <div class="flow-step step-red">
+      <div class="fs-q"><span class="step-num">2</span>Respira espontàniament?</div>
+      <div class="fs-a">
+        <span class="no">❌ NO → Obrir via aèria (tracció mandibular/hiperextensió)</span>
+        <span style="padding-left:14px;font-size:12px;color:var(--muted)">↳ Respira ara? SÍ → <strong style="color:var(--red)">VERMELL</strong> (P1)</span>
+        <span style="padding-left:14px;font-size:12px;color:#666">↳ Segueix sense respirar → <strong style="color:#aaa">NEGRE</strong> (Sense prioritat)</span>
+        <span class="yes">✅ SÍ → Valora FR →</span>
+      </div>
+    </div>
+    <div class="flow-step step-red">
+      <div class="fs-q"><span class="step-num">3</span>Freqüència Respiratòria</div>
+      <div class="fs-a">
+        <span class="no">❌ FR &gt; 30 rpm o &lt; 10 rpm → <strong style="color:var(--red)">VERMELL</strong> (P1 · Immediat)</span>
+        <span class="yes">✅ FR 10–30 rpm → Valora perfusió →</span>
+      </div>
+    </div>
+    <div class="flow-step step-red">
+      <div class="fs-q"><span class="step-num">4</span>Perfusió (Pols radial / Reompliment capil·lar)</div>
+      <div class="fs-a">
+        <span class="no">❌ Pols radial absent <strong>O</strong> RC &gt; 2 seg → <strong style="color:var(--red)">VERMELL</strong> (P1)</span>
+        <span style="padding-left:14px;font-size:12px;color:var(--muted)">↳ Comprimir punts de sagnat / Elevar extremitat</span>
+        <span class="yes">✅ Pols present / RC ≤ 2 seg → Valora SNC →</span>
+      </div>
+    </div>
+    <div class="flow-step step-yellow">
+      <div class="fs-q"><span class="step-num">5</span>Estat Neurològic (obeeix ordres senzilles?)</div>
+      <div class="fs-a">
+        <span style="font-size:12px;color:var(--muted);margin-bottom:2px">Ex: "Obri i tanqui els ulls", "Apreti la mà"</span>
+        <span class="no">❌ NO → <strong style="color:var(--red)">VERMELL</strong> (P1 · Immediat)</span>
+        <span class="yes">✅ SÍ → <strong style="color:var(--yellow)">GROC</strong> (P2 · Urgent · Tractament precoç)</span>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="card-title">Resum categories START</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div style="background:var(--red);border-radius:6px;padding:8px;text-align:center"><div style="font-weight:800;font-size:14px">🔴 VERMELL</div><div style="font-size:11px">P1 · Immediat</div></div>
+        <div style="background:var(--yellow-d);border-radius:6px;padding:8px;text-align:center;color:#000"><div style="font-weight:800;font-size:14px">🟡 GROC</div><div style="font-size:11px">P2 · Urgent</div></div>
+        <div style="background:var(--green);border-radius:6px;padding:8px;text-align:center"><div style="font-weight:800;font-size:14px">🟢 VERD</div><div style="font-size:11px">P3 · Demorable</div></div>
+        <div style="background:#333;border-radius:6px;padding:8px;text-align:center;border:1px solid #555"><div style="font-weight:800;font-size:14px">⬛ NEGRE</div><div style="font-size:11px">Sense prioritat</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- META -->
+  <div id="triage-meta" class="hidden">
+    <div class="alert-box alert-blue">
+      <strong>Triatge META</strong> (Mètode d'Estabilització i Triatge Avançat) · CETPH 2011<br>
+      <em style="font-size:12px">L'executa personal mèdic/DUI. A l'entrada, dins i a la sortida del PMA.</em>
+    </div>
+    <div class="section-title">PAS 1 · Triatge d'Estabilització (ABCDE)</div>
+    <div class="flow-step step-red">
+      <div class="fs-q">Compromís Via Aèria (A)</div>
+      <div class="fs-a"><span class="no">Sí → <strong style="color:var(--red)">VERMELL 1a</strong> (Màxima prioritat)</span></div>
+    </div>
+    <div class="flow-step step-red">
+      <div class="fs-q">Compromís Ventilació (B)</div>
+      <div class="fs-a"><span class="no">Sí → <strong style="color:var(--red)">VERMELL 2a</strong></span></div>
+    </div>
+    <div class="flow-step step-red">
+      <div class="fs-q">Compromís Circulació (C)</div>
+      <div class="fs-a"><span class="no">Sí → <strong style="color:var(--red)">VERMELL 3a</strong></span></div>
+    </div>
+    <div class="flow-step step-yellow">
+      <div class="fs-q">Compromís Neurològic aïllat (D)</div>
+      <div class="fs-a"><span style="color:var(--yellow)">Sí → <strong style="color:var(--yellow)">GROC 1a</strong></span></div>
+    </div>
+    <div class="flow-step step-yellow">
+      <div class="fs-q">Precisa valoració hospitalària (E)</div>
+      <div class="fs-a"><span style="color:var(--yellow)">Sí → <strong style="color:var(--yellow)">GROC 2a</strong></span><span class="yes">No → <strong style="color:var(--green)">VERD</strong></span></div>
+    </div>
+    <div class="section-title">PAS 2 · Valoració Quirúrgica Precoç (Q)</div>
+    <div class="alert-box alert-red">Identifica pacients quirúrgics greus que NO es beneficien del SVA extraHospitalari però SÍ de cirurgia precoç.</div>
+    <div class="card">
+      <div class="card-title">Criteris Q (Quirúrgic urgent)</div>
+      <div style="font-size:13px;line-height:1.9">
+        • Trauma penetrant cap/coll/tronc/proximal genoll-colze amb hemorràgia<br>
+        • Fractura oberta de pelvis<br>
+        • Fractura tancada de pelvis + inestabilitat mecànica/HDN<br>
+        • Trauma tancat de tronc amb signes de xoc<br>
+        • Sospita lesió vascular extremitats
+      </div>
+    </div>
+    <div class="section-title">PAS 4 · Triatge d'Evacuació (ordre de sortida)</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="noria-step"><div class="noria-num" style="background:var(--red)">1r</div><div class="noria-text"><strong>Vermell Q</strong> que no ha estat evacuat (trauma penetrant, pelvis, xoc)</div></div>
+      <div class="noria-step"><div class="noria-num" style="background:var(--red)">2n</div><div class="noria-text"><strong>Vermells greus</strong> amb TA sistòlica &lt;110 / GCS motor &lt;6 / Necessitat IOT / Lesió explosió espai tancat</div></div>
+      <div class="noria-step"><div class="noria-num" style="background:var(--red)">3r</div><div class="noria-text"><strong>Vermells</strong> amb problemes no resolts de via aèria</div></div>
+      <div class="noria-step"><div class="noria-num" style="background:var(--red)">4t</div><div class="noria-text"><strong>Vermells</strong> amb problemes no resolts de ventilació</div></div>
+      <div class="noria-step"><div class="noria-num" style="background:var(--yellow-d)">5è</div><div class="noria-text"><strong>Grocs 1a</strong> (compromís neurològic)</div></div>
+      <div class="noria-step"><div class="noria-num" style="background:var(--yellow-d)">6è</div><div class="noria-text"><strong>Grocs 2a</strong> (valoració hospitalària)</div></div>
+      <div class="noria-step"><div class="noria-num" style="background:var(--green)">7è</div><div class="noria-text"><strong>Verds</strong></div></div>
+    </div>
+  </div>
+
+  <!-- COMPTADOR -->
+  <div id="triage-counter" class="hidden">
+    <div class="triage-grid">
+      <div class="triage-box box-red">
+        <div class="t-num" id="tc-r">0</div><div class="t-label">🔴 Vermells (P1)</div>
+        <div class="t-controls">
+          <button class="t-btn" onclick="changeTriage('r',-1)">−</button>
+          <button class="t-btn" onclick="changeTriage('r',1)">+</button>
+        </div>
+      </div>
+      <div class="triage-box box-yellow">
+        <div class="t-num" id="tc-g">0</div><div class="t-label">🟡 Grocs (P2)</div>
+        <div class="t-controls">
+          <button class="t-btn" onclick="changeTriage('g',-1)">−</button>
+          <button class="t-btn" onclick="changeTriage('g',1)">+</button>
+        </div>
+      </div>
+      <div class="triage-box box-green">
+        <div class="t-num" id="tc-v">0</div><div class="t-label">🟢 Verds (P3)</div>
+        <div class="t-controls">
+          <button class="t-btn" onclick="changeTriage('v',-1)">−</button>
+          <button class="t-btn" onclick="changeTriage('v',1)">+</button>
+        </div>
+      </div>
+      <div class="triage-box box-black">
+        <div class="t-num" id="tc-n">0</div><div class="t-label">⬛ Negres</div>
+        <div class="t-controls">
+          <button class="t-btn" onclick="changeTriage('n',-1)">−</button>
+          <button class="t-btn" onclick="changeTriage('n',1)">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div><div style="font-size:11px;color:var(--muted)">TOTAL</div><div style="font-size:32px;font-weight:900;font-family:monospace" id="tc-total">0</div></div>
+        <div style="text-align:right">
+          <div style="font-size:12px;color:var(--muted)">Blancs (il·lesos)</div>
+          <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-top:4px">
+            <button class="t-btn" style="background:var(--surface3);width:30px;height:30px;border-radius:50%;border:1px solid var(--border);color:var(--text);font-size:16px;cursor:pointer" onclick="changeTriage('b',-1)">−</button>
+            <span id="tc-b" style="font-size:20px;font-weight:800;font-family:monospace">0</span>
+            <button class="t-btn" style="background:var(--surface3);width:30px;height:30px;border-radius:50%;border:1px solid var(--border);color:var(--text);font-size:16px;cursor:pointer" onclick="changeTriage('b',1)">+</button>
+          </div>
+        </div>
+      </div>
+      <div id="nivel-sugerit" class="alert-box alert-yellow hidden"></div>
+      <button class="btn btn-grey" onclick="resetTriage()" style="margin-top:8px">🔄 Reiniciar comptador</button>
+    </div>
+  </div>
+
+  <!-- SEGON TRIATGE -->
+  <div id="triage-segon" class="hidden">
+    <div class="alert-box alert-blue">El 2n triatge l'efectuen <strong>Tècnics (TTS/TES)</strong> sobre els verds i grocs. Metges i DUIs al PMA fan el Triatge META.</div>
+    <div class="section-title">GROC — Greus / Tractament precoç</div>
+    <div class="card">
+      <div style="font-size:13px;line-height:1.9">
+        • Cremades 2n grau &gt;30%<br>• Cremades 3r grau &gt;10%<br>• Cremades complicades (teixits tous, fractures menors)<br>• Cremades 3r grau a peus, mans o cara<br>• Hemorràgia estimada 500–1000 ml<br>• Lesions dorsals amb/sense dany columna cervical<br>• Pacient conscient amb lesió cranioencefàlica
+      </div>
+    </div>
+    <div class="section-title">VERD — Lleus / Tractament diferit</div>
+    <div class="card">
+      <div style="font-size:13px;line-height:1.9">
+        • Lesions menors / Fractures menors<br>• Cremades 1r grau &lt;20%<br>• Cremades 2n grau &lt;15%<br>• Cremades 3r grau &lt;2%
+      </div>
+    </div>
+    <div class="section-title">BLANC — Il·lesos</div>
+    <div class="card"><div style="font-size:13px">No afectats en la seva salut. No tractament, no evacuació.</div></div>
+    <div class="section-title">GRIS — Expectants / Sense recursos</div>
+    <div class="card"><div class="alert-box alert-red" style="margin:0">Víctimes molt greus amb molt baixes possibilitats de supervivència o que consumirien recursos desproporcionats. Es prioritza la resta.</div></div>
+  </div>
+</section>
+</div><!-- end #content placeholder — continued in JS render -->
+
+<!-- BOTTOM NAV -->
+<nav id="navbar">
+  <button class="nav-btn active" onclick="goTab('inici',this)"><span class="icon">🏠</span>Inici</button>
+  <button class="nav-btn" onclick="goTab('activacio',this)"><span class="icon">🚨</span>Activació</button>
+  <button class="nav-btn" onclick="goTab('triatge',this)"><span class="icon">🔴</span>Triatge</button>
+  <button class="nav-btn" onclick="goTab('organigrama',this)"><span class="icon">🗺️</span>Org.</button>
+  <button class="nav-btn" onclick="goTab('fitxes',this)"><span class="icon">✅</span>Fitxes</button>
+  <button class="nav-btn" onclick="goTab('radio',this)"><span class="icon">📡</span>Ràdio</button>
+  <button class="nav-btn" onclick="goTab('contactes',this)"><span class="icon">📞</span>Telèfons</button>
+</nav>
+</div><!-- end #app -->
+
+<!-- ACTIVATION MODAL -->
+<div class="modal-overlay" id="modal-activation" onclick="closeModalOutside(event)">
+  <div class="modal-box">
+    <div class="modal-title">⚡ Activar IMV</div>
+    <div class="card-title" style="margin-bottom:8px">Selecciona Nivell</div>
+    <div class="level-select-grid">
+      <button class="ls-btn l1" onclick="activateIncident('I')"><div class="ls-level">NIVELL I</div><div class="ls-desc">≥6 vermells o ≥10 víctimes. Recursos zona.</div></button>
+      <button class="ls-btn l2" onclick="activateIncident('II')"><div class="ls-level">NIVELL II</div><div class="ls-desc">≥10 vermells o 10–100. Zones contigües.</div></button>
+      <button class="ls-btn l3" onclick="activateIncident('III')"><div class="ls-level">NIVELL III</div><div class="ls-desc">≥100 vermells o 100–500. Tot territori.</div></button>
+      <button class="ls-btn l4" onclick="activateIncident('IV')"><div class="ls-level">NIVELL IV</div><div class="ls-desc">&gt;500 víctimes. Màxim recursos.</div></button>
+    </div>
+    <button class="btn btn-grey" onclick="closeModal()">Cancel·lar</button>
+  </div>
+</div>
+
+<!-- DYNAMIC TABS injected by JS -->
+<script>
+// ═══════════════════ STATE ═══════════════════
+const S = {
+  incident: { active:false, level:null, type:null, startTime:null },
+  triage: { r:0, g:0, v:0, n:0, b:0 },
+  checklists: {},
+  contacts: [
+    {id:1, icon:'🆘', name:'112 · Emergències', number:'112'},
+    {id:2, icon:'🚑', name:'061 · SEM Central', number:'061'},
+    {id:3, icon:'📻', name:'CECOS (Central)', number:''},
+    {id:4, icon:'🏥', name:'Hospital Referència 1', number:''},
+    {id:5, icon:'🏥', name:'Hospital Referència 2', number:''},
+    {id:6, icon:'🚒', name:'Bombers', number:'112'},
+    {id:7, icon:'👮', name:'Mossos d\'Esquadra', number:'112'},
+    {id:8, icon:'🧠', name:'Psicòlegs SEM', number:''},
+  ]
+};
+let timerInterval = null;
+
+function loadState(){
+  try{const d=localStorage.getItem('sem_imv');if(d){const p=JSON.parse(d);S.triage=p.triage||S.triage;S.checklists=p.checklists||{};S.contacts=p.contacts||S.contacts;if(p.incident&&p.incident.active){S.incident=p.incident;startTimerDisplay();}}}catch(e){}
+}
+function saveState(){localStorage.setItem('sem_imv',JSON.stringify(S));}
+
+// ═══════════════════ NAVIGATION ═══════════════════
+function goTab(id,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const tab=document.getElementById('tab-'+id);
+  if(tab)tab.classList.add('active');
+  if(btn)btn.classList.add('active');
+  else{const navBtns=document.querySelectorAll('.nav-btn');navBtns.forEach(b=>{if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+id+"'"))b.classList.add('active');});}
+  document.getElementById('content').scrollTop=0;
+}
+
+// ═══════════════════ INCIDENT ACTIVATION ═══════════════════
+function openActivationModal(){document.getElementById('modal-activation').classList.add('open');}
+function closeModal(){document.getElementById('modal-activation').classList.remove('open');}
+function closeModalOutside(e){if(e.target===document.getElementById('modal-activation'))closeModal();}
+
+function activateIncident(level){
+  S.incident={active:true,level,type:S.incident.type||null,startTime:Date.now()};
+  saveState();closeModal();
+  updateIncidentUI();startTimerDisplay();
+  document.getElementById('timer-display').style.display='block';
+  document.getElementById('level-pill').textContent='Nivell '+level;
+  document.getElementById('level-pill').style.display='block';
+}
+function closeIncident(){
+  if(!confirm('Tancar l\'incident actiu?'))return;
+  S.incident={active:false,level:null,type:null,startTime:null};
+  S.triage={r:0,g:0,v:0,n:0,b:0};
+  saveState();clearInterval(timerInterval);
+  document.getElementById('timer-display').style.display='none';
+  document.getElementById('level-pill').style.display='none';
+  document.getElementById('panel-active').classList.add('hidden');
+  document.getElementById('panel-inactive').classList.remove('hidden');
+  updateAllCounters();
+}
+function updateIncidentUI(){
+  if(!S.incident.active)return;
+  document.getElementById('panel-inactive').classList.add('hidden');
+  document.getElementById('panel-active').classList.remove('hidden');
+  document.getElementById('active-level-label').textContent='NIVELL '+S.incident.level;
+  document.getElementById('active-type').textContent=S.incident.type?tipoNames[S.incident.type]:'—';
+  renderActiveChannels();updateAllCounters();
+}
+function startTimerDisplay(){
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    if(!S.incident.startTime)return;
+    const e=Math.floor((Date.now()-S.incident.startTime)/1000);
+    const h=String(Math.floor(e/3600)).padStart(2,'0');
+    const m=String(Math.floor((e%3600)/60)).padStart(2,'0');
+    const s=String(e%60).padStart(2,'0');
+    const t=h+':'+m+':'+s;
+    const td=document.getElementById('timer-display');
+    const at=document.getElementById('active-timer');
+    if(td)td.textContent=t;if(at)at.textContent=t;
+  },1000);
+}
+
+// ═══════════════════ CHANNELS ═══════════════════
+const channelsByLevel={
+  I:[{name:'EME1_CAT',desc:'Canal operatiu IMV',use:'Líder AS ↔ CECOS. Totes les unitats.',color:'#fdd835'}],
+  II:[{name:'EME1_CAT',desc:'Canal operatiu IMV',use:'Líder AS (Alfa Sierra) ↔ CECOS. Papa Echo ↔ evacuació.',color:'#fdd835'},{name:'D_1',desc:'Canal de Comandaments',use:'Exclusiu per comandaments. Enllaç D ↔ CO.',color:'#90caf9'},{name:'EME2_CAT',desc:'Canal de Filiacions',use:'Exclusiu Enllaç D → filiació afectats a CECOS.',color:'#a5d6a7'}],
+  III:[{name:'EME1_CAT',desc:'Canal operatiu IMV',use:'Líder AS ↔ CECOS + unitats.',color:'#fdd835'},{name:'D_1',desc:'Canal de Comandaments',use:'Exclusiu comandaments.',color:'#90caf9'},{name:'EME2_CAT',desc:'Canal de Filiacions',use:'Exclusiu filiació afectats.',color:'#a5d6a7'}],
+  IV:[{name:'EME1_CAT',desc:'Canal operatiu IMV',use:'Canal principal.',color:'#fdd835'},{name:'D_1',desc:'Canal de Comandaments',use:'Comandaments.',color:'#90caf9'},{name:'EME2_CAT',desc:'Canal de Filiacions',use:'Filiacions.',color:'#a5d6a7'}]
+};
+function renderActiveChannels(){
+  const level=S.incident.level||'I';
+  const chs=channelsByLevel[level]||channelsByLevel.I;
+  document.getElementById('active-channels-list').innerHTML=chs.map(c=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:15px;font-weight:800;font-family:monospace;color:${c.color}">${c.name}</span>
+      <span style="font-size:12px;color:var(--muted);flex:1">${c.use}</span>
+    </div>`).join('');
+}
+
+// ═══════════════════ TRIAGE COUNTERS ═══════════════════
+function changeTriage(col,delta){
+  S.triage[col]=Math.max(0,(S.triage[col]||0)+delta);
+  saveState();updateAllCounters();
+}
+function quickTriage(col,delta){changeTriage(col,delta);updateIncidentUI();}
+function updateAllCounters(){
+  ['r','g','v','n','b'].forEach(c=>{
+    const els=[document.getElementById('tc-'+c),document.getElementById('qi-'+c)];
+    els.forEach(el=>{if(el)el.textContent=S.triage[c]||0;});
+  });
+  const total=(S.triage.r||0)+(S.triage.g||0)+(S.triage.v||0)+(S.triage.n||0)+(S.triage.b||0);
+  const ttc=document.getElementById('tc-total');if(ttc)ttc.textContent=total;
+  const tv=document.getElementById('total-victims');if(tv)tv.textContent=total;
+  // Suggest level
+  const r=S.triage.r||0;const all=total;
+  const ns=document.getElementById('nivel-sugerit');
+  if(ns){
+    if(r>=100||all>=100){ns.className='alert-box alert-yellow';ns.textContent='⚠️ Criteri NIVELL III/IV (≥100 víctimes)';ns.classList.remove('hidden');}
+    else if(r>=10||all>=10){ns.className='alert-box alert-yellow';ns.textContent='⚠️ Criteri NIVELL II (≥10 vermells o ≥10 totals)';ns.classList.remove('hidden');}
+    else if(r>=6||all>=10){ns.className='alert-box alert-yellow';ns.textContent='⚠️ Criteri NIVELL I (≥6 vermells o ≥10 totals)';ns.classList.remove('hidden');}
+    else ns.classList.add('hidden');
+  }
+}
+function resetTriage(){if(!confirm('Reiniciar tots els comptadors?'))return;S.triage={r:0,g:0,v:0,n:0,b:0};saveState();updateAllCounters();}
+
+// ═══════════════════ TRIAGE MODE ═══════════════════
+function setTriageMode(mode,btn){
+  document.querySelectorAll('#triage-mode-tabs .role-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['start','meta','counter','segon'].forEach(m=>{
+    const el=document.getElementById('triage-'+m);if(el)el.classList.toggle('hidden',m!==mode);
+  });
+}
+
+// ═══════════════════ TIPO INCIDENTE ═══════════════════
+const tipoNames={atm:'Accident de Trànsit Múltiple',ferroviari:'Accident Ferroviari/Metro',aeri:'Accident Aeri',incendi:'Incendi / Explosió',rnbq:'Incident RNBQ',atemptat:'Atemptat / Tiroteig',catastrofe:'Catàstrofe Natural',esfondrament:'Esfondrament',maritim:'Accident Marítim'};
+const tipoInfo={
+  atm:'<strong>ATM:</strong> Sectorizació ràpida. Bombers lidera rescat. SEM: triatge START des del primer vehicle. Compte amb víctimes atrapades (risc compartiment). Coordinació Grup Ordre per tall de via.',
+  ferroviari:'<strong>Ferroviari:</strong> Perill elèctric (catenaria). Esperar tall de corrent. Coordinació amb operadora ferroviària. Múltiples focus. Accés dificultós — valorar helicòpter.',
+  aeri:'<strong>Aeri:</strong> Coordinació amb AENA/aeroport. Perill combustible (Jet A-1). RNBQ possible. Bombers zona calenta. Identificació víctimes complexa (manifest de vol).',
+  incendi:'<strong>Incendi/Explosió:</strong> Múltiples mecanismes (cremades, blast, CO, fum). Zona calenta exclusiva Bombers. Alerta intoxicació CO (pulsioximetria no fiable). Explosions secundàries.',
+  rnbq:'<strong>RNBQ:</strong> Zona calenta: Bombers/TEDAX. SEM: EXCLUSIVAMENT zona freda (descontaminació prèvia). EPI adequat. Coordinació CCAA/DGPEIS. Antídots específics si QUIM.',
+  atemptat:'<strong>Atemptat:</strong> Seguretat de la zona PRIMER (Mossos/Policia). Possible atac múltiple (alerta zona secundària). Perill artefactes secundaris. TCC predominant.',
+  catastrofe:'<strong>Catàstrofe Natural:</strong> Activació Protecció Civil. Accés compromès. Múltiples focus. Recursos limitats. Coordinació CECOP/CECAT.',
+  esfondrament:'<strong>Esfondrament:</strong> Víctimes atrapades (mòduls GRAE/Bombers). Inestabilitat estructural. Perill gas. Triatge complex (víctimes no accessibles).',
+  maritim:'<strong>Marítim:</strong> Coordinació Salvament Marítim / Guardia Civil Mar. Hipotèrmia. Accés per barca/helicòpter. Identificació víctimes complexa.'
+};
+function selectTipo(btn){
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const tipo=btn.dataset.tipo;
+  S.incident.type=tipo;saveState();
+  const info=document.getElementById('tipo-info');
+  info.innerHTML='<div class="alert-box alert-blue">'+tipoInfo[tipo]+'</div>';
+  info.classList.remove('hidden');
+  if(S.incident.active){document.getElementById('active-type').textContent=tipoNames[tipo];}
+}
+
+// ═══════════════════ CHECKLISTS ═══════════════════
+const checklists={
+  metge_sva:{label:'Metge — Resp. adequada SVA',items:[
+    'Comunicació amb CECOS: dimensionar sinistre i sol·licitar recursos','Localitzar comandament Bombers i definir Àrea Sanitària (AS) conjuntament',
+    'Assumir lideratge de l\'AS (o delegar en el més experimentat)','Iniciar Triatge Bàsic START (sense aturar-se a tractar)',
+    'Assignar rols al personal: T.Estabilització, Zona Vermells, Zona Grocs, Zona Verds, PE, Nòries',
+    'Supervisar Triatge d\'Estabilització (porta vermells del PMA)','Coordinar evacuació amb Papa Echo (PE) via EME1_CAT',
+    'Comunicar categoritzacions periòdiques a CECOS','Coordinar hospitals receptors (centre útil per a cada víctima)',
+    'Activar canal D_1 si Nivell II+','Mantenir Registre d\'afectats (fulls de filiació)','Documentar horaris d\'accions clau'
+  ]},
+  dui_svа:{label:'DUI — Resp. adequada SVA',items:[
+    'Rebre rol del Líder AS','Preparar material PMA (maletins, immobilitzacions, electromedicina)',
+    'Assumir Triatge d\'Estabilització a la porta d\'entrada del PMA (si assignat)',
+    'Classificar víctimes ABCDE (mètode META) amb targetes de triatge','Gestionar Zona Grocs (si assignat)',
+    'Aplicar tractament d\'estabilització a vermells (via venosa, fluids, analgèsia, VA)',
+    'Registrar identificació de cada víctima (full filiació)','Coordinar amb metge decisions de valoració quirúrgica precoç (Q)',
+    'Col·laborar amb Punt d\'Evacuació per prioritats de sortida','Documentar tractaments aplicats'
+  ]},
+  tes_svа:{label:'TTS/TES — Resp. adequada SVA',items:[
+    'Rebre rol del Líder AS','Executar Triatge Bàsic START si no ho fan Bombers (1r TTS)',
+    'Organitzar Àrea Sanitària i Punt d\'Ambulàncies (2n TTS, amb Grup Ordre)',
+    'Reagrupar víctimes per colors a la seva zona','Assumir Nòria de camilles (transport intern)',
+    'Gestionar porta d\'entrada AS (control accés)',
+    'Realitzar 2n triatge de Verds i Grocs','Gestionar Zona Verds','Donar suport a zona Grocs si hi ha DUIs suficients',
+    'Preparar ambulàncies per evacuació','Registrar traslats i destins',
+    'Comunicat final al CECOS: 3.6 al lloc, 3.10 AS'
+  ]},
+  tes_sense:{label:'TTS/TES — Sense SVA (pitjor escenari)',items:[
+    'Assumir lideratge fins a l\'arribada de SVA','Comunicació immediata amb CECOS: sol·licitar SVA urgent',
+    'Localitzar comandament Bombers','Iniciar Triatge Bàsic START',
+    'Reagrupar víctimes per colors (prioritzar vermells)','Organitzar AS bàsica: 3 zones + porta sortida + pàrquing ambulàncies',
+    'Aplicar gestos salvadors bàsics (via aèria, sagnat)',
+    'Mantenir comunicació freqüent amb CECOS','Esperar instruccions de CECOS',
+    'Cedir lideratge al primer SVA que arribi'
+  ]},
+  pe:{label:'Papa Echo — Punt Evacuació',items:[
+    'Establir-se al Punt d\'Evacuació (PE) del PMA','Coordinar posicionament d\'ambulàncies (nòria)',
+    'Rebre informació del Líder AS sobre víctimes preparades per evacuar',
+    'Comunicar a CECOS per EME1_CAT cada víctima a evacuar (Nº ID · Sexe · Edat · Diagnòstic · Unitat)',
+    'Esperar destí de CECOS (centre útil) per a cada víctima',
+    'Assignar unitat de trasllat i destí a cada víctima','Registrar: unitat que traslada, destí, hora de sortida',
+    'Informar CECOS: la unitat comunicarà 3.6 al lloc i 3.10 AS en arribar',
+    'Gestionar retorn d\'unitats i reasignació','Prioritzar ordre evacuació: Vermell Q > Vermells 1-2 > Grocs > Verds'
+  ]},
+  llac:{label:'Enllaç D — Filiacions',items:[
+    'Rebre rol Enllaç D del Líder AS (Alfa Sierra)','Canviar a canal EME2_CAT per comunicats de filiació',
+    'Recollir fulls de filiació de cada víctima atesa (Annex IV)',
+    'Transmetre a CECOS per EME2_CAT: Nº ID · Identificació personal · Nacionalitat · Lloc assistència · Categorització',
+    'Usar canal D_1 per comunicar amb comandaments (Nivell II+)',
+    'Mantenir registre ordenat de totes les víctimes identificades',
+    'Coordinar amb PE per garantir coherència de numèrotació',
+    'Informar qualsevol canvi de categorització a CECOS'
+  ]}
+};
+function renderChecklist(key){
+  const cl=checklists[key];if(!cl)return;
+  if(!S.checklists[key])S.checklists[key]={};
+  const checked=S.checklists[key];
+  const done=cl.items.filter((_,i)=>checked[i]).length;
+  document.getElementById('cl-container').innerHTML=`
+    <div class="card-title">${cl.label}</div>
+    <div class="cl-progress"><div class="cl-progress-bar" style="width:${Math.round(done/cl.items.length*100)}%"></div></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">${done}/${cl.items.length} completats</div>
+    ${cl.items.map((item,i)=>`
+    <div class="cl-item ${checked[i]?'done':''}">
+      <input type="checkbox" id="cl_${key}_${i}" ${checked[i]?'checked':''} onchange="toggleCheck('${key}',${i},this)">
+      <label for="cl_${key}_${i}">${item}</label>
+    </div>`).join('')}
+    <button class="btn btn-grey" style="margin-top:12px" onclick="resetChecklist('${key}')">🔄 Reiniciar fitxa</button>
+  `;
+}
+function toggleCheck(key,i,el){
+  if(!S.checklists[key])S.checklists[key]={};
+  S.checklists[key][i]=el.checked;
+  saveState();
+  const item=el.closest('.cl-item');if(item)item.classList.toggle('done',el.checked);
+  const cl=checklists[key];const done=cl.items.filter((_,j)=>S.checklists[key][j]).length;
+  const bar=document.querySelector('.cl-progress-bar');if(bar)bar.style.width=Math.round(done/cl.items.length*100)+'%';
+  const txt=document.querySelector('#cl-container .cl-progress+div');if(txt)txt.textContent=done+'/'+cl.items.length+' completats';
+}
+function resetChecklist(key){if(!confirm('Reiniciar fitxa?'))return;S.checklists[key]={};saveState();renderChecklist(key);}
+
+// ═══════════════════ CONTACTS ═══════════════════
+function renderContacts(){
+  const container=document.getElementById('contacts-list');if(!container)return;
+  container.innerHTML=S.contacts.map(c=>`
+    <div class="contact-item">
+      <div class="ci-icon">${c.icon}</div>
+      <div class="ci-info">
+        <div class="ci-name">${c.name}</div>
+        <div class="ci-number">${c.number||'—'}</div>
+      </div>
+      ${c.number?`<button class="ci-call" onclick="callNumber('${c.number}')">📞 Trucar</button>`:'<button class="ci-call" style="background:var(--surface3);color:var(--muted)" onclick="editContact(${c.id})">✏️ Editar</button>'}
+    </div>`).join('');
+}
+function callNumber(n){window.location.href='tel:'+n;}
+function editContact(id){
+  const c=S.contacts.find(x=>x.id===id);if(!c)return;
+  const n=prompt('Número de telèfon per "'+c.name+'":',c.number||'');
+  if(n===null)return;c.number=n.trim();saveState();renderContacts();
+}
+
+// ═══════════════════ INIT DYNAMIC TABS ═══════════════════
+function buildOrganigramaTab(){
+  const tab=document.createElement('section');
+  tab.className='tab';tab.id='tab-organigrama';
+  tab.innerHTML=`
+  <div class="org-tab-btns" id="org-type-btns">
+    <button class="otb active" onclick="setOrgType('generic',this)">General</button>
+    <button class="otb" onclick="setOrgType('atm',this)">🚗 ATM</button>
+    <button class="otb" onclick="setOrgType('incendi',this)">🔥 Incendi</button>
+    <button class="otb" onclick="setOrgType('rnbq',this)">☢️ RNBQ</button>
+    <button class="otb" onclick="setOrgType('atemptat',this)">💥 Atemptat</button>
+  </div>
+  <div id="org-diagram"></div>
+  <div class="section-title" style="margin-top:14px">Armilles de lideratge</div>
+  <div class="vest-grid">
+    <div class="vest-card"><div class="vest-header"><div class="vest-color" style="background:linear-gradient(var(--orange) 50%,var(--orange-d) 50%)"></div><div class="vest-title">Responsable AS</div></div><div class="vest-role">Líder de l'Àrea Sanitària</div><div class="vest-indicator">Indicatiu: ALFA SIERRA (AS)</div></div>
+    <div class="vest-card"><div class="vest-header"><div class="vest-color" style="background:linear-gradient(var(--red) 50%,#555 50%)"></div><div class="vest-title">Triatge Estabilització</div></div><div class="vest-role">Metge/DUI porta entrada PMA</div><div class="vest-indicator">Canal: EME1_CAT</div></div>
+    <div class="vest-card"><div class="vest-header"><div class="vest-color" style="background:var(--red)"></div><div class="vest-title">Triatge Vermell</div></div><div class="vest-role">Metge/DUI zona vermells</div><div class="vest-indicator">Canal: EME1_CAT</div></div>
+    <div class="vest-card"><div class="vest-header"><div class="vest-color" style="background:var(--yellow)"></div><div class="vest-title">Triatge Groc</div></div><div class="vest-role">DUI / TTS zona grocs</div><div class="vest-indicator">Canal: EME1_CAT</div></div>
+    <div class="vest-card"><div class="vest-header"><div class="vest-color" style="background:var(--green)"></div><div class="vest-title">Triatge Verd</div></div><div class="vest-role">TTS / TES zona verds</div><div class="vest-indicator">Canal: EME1_CAT</div></div>
+    <div class="vest-card"><div class="vest-header"><div class="vest-color" style="background:var(--blue)"></div><div class="vest-title">Punt d'Evacuació</div></div><div class="vest-role">Metge/DUI · Gestió evacuació</div><div class="vest-indicator">Indicatiu: PAPA ECHO (PE)</div></div>
+    <div class="vest-card"><div class="vest-header"><div class="vest-color" style="background:linear-gradient(var(--yellow) 50%,#444 50%)"></div><div class="vest-title">Punt d'Accés</div></div><div class="vest-role">TES · Pàrquing ambulàncies</div><div class="vest-indicator">Canal: EME1_CAT</div></div>
+    <div class="vest-card"><div class="vest-header"><div class="vest-color" style="background:var(--surface3);border:1px solid var(--border)"></div><div class="vest-title">Enllaç D</div></div><div class="vest-role">DUI / Metge · Filiacions</div><div class="vest-indicator">Canal: EME2_CAT + D_1</div></div>
+  </div>
+  <div class="section-title">Zones de l'Àrea Sanitària</div>
+  <div class="card">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;background:rgba(229,57,53,.15);border-radius:6px;border-left:4px solid var(--red)">
+        <span style="font-size:20px">🔴</span><div><div style="font-weight:700;font-size:13px">Zona VERMELLS (P1)</div><div style="font-size:11px;color:var(--muted)">Metge + DUI. Tractament immediat. Alta tecnologia.</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;background:rgba(253,216,53,.1);border-radius:6px;border-left:4px solid var(--yellow)">
+        <span style="font-size:20px">🟡</span><div><div style="font-weight:700;font-size:13px">Zona GROCS (P2)</div><div style="font-size:11px;color:var(--muted)">DUI + TTS. Tractament precoç. Estabilització.</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;background:rgba(67,160,71,.1);border-radius:6px;border-left:4px solid var(--green)">
+        <span style="font-size:20px">🟢</span><div><div style="font-weight:700;font-size:13px">Zona VERDS (P3)</div><div style="font-size:11px;color:var(--muted)">TTS. Reagrupament. Valoració diferida.</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;background:rgba(97,97,97,.15);border-radius:6px;border-left:4px solid #555">
+        <span style="font-size:20px">⬛</span><div><div style="font-weight:700;font-size:13px">Zona NEGRES</div><div style="font-size:11px;color:var(--muted)">Separada. Acompanyament psicòleg si disponible.</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;background:rgba(30,136,229,.1);border-radius:6px;border-left:4px solid var(--blue)">
+        <span style="font-size:20px">🚑</span><div><div style="font-weight:700;font-size:13px">Punt d'Evacuació (PE)</div><div style="font-size:11px;color:var(--muted)">Sortida ordenada cap a hospitals. Papa Echo gestiona.</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;background:rgba(96,125,139,.1);border-radius:6px;border-left:4px solid var(--grey)">
+        <span style="font-size:20px">🅿️</span><div><div style="font-weight:700;font-size:13px">Punt d'Accés / Pàrquing Ambulàncies</div><div style="font-size:11px;color:var(--muted)">TES. Entrada unidireccional. Coordinació Grup Ordre.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Control de Zona i Coordinació Inter-serveis</div>
+  <div class="alert-box alert-blue" style="margin-bottom:10px;font-size:12px">
+    El Líder AS <strong>busca el comandament operatiu de Bombers</strong> en arribar al lloc per definir físicament l'Àrea Sanitària conjuntament (Annex VI SEM).
+  </div>
+
+  <!-- GRUPS D'ACTUACIÓ -->
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="serveis-table">
+      <tr><th colspan="3">Grups d'Actuació i Funcions</th></tr>
+      <tr>
+        <td class="serv-icon">🚒</td>
+        <td>
+          <div style="font-weight:800;font-size:13px;color:#ff7043">GRUP D'INTERVENCIÓ — Bombers</div>
+          <div style="font-size:12px;margin-top:4px;line-height:1.7">
+            • Gestió zona calenta (rescat, extricació, extinció)<br>
+            • Defineix amb SEM la ubicació de l'AS<br>
+            • Autoritza l'accés del SEM a la zona (en casos RNBQ, explosió, derrumbe)<br>
+            • En RNBQ: descontaminació (zona tèbia) — SEM mai entra fins descontaminació<br>
+            • Coordina amb Alfa Sierra perímetre de seguretat
+          </div>
+        </td>
+        <td style="font-size:11px;color:var(--muted);min-width:80px">Zona calenta<br>Zona tèbia</td>
+      </tr>
+      <tr>
+        <td class="serv-icon">👮</td>
+        <td>
+          <div style="font-weight:800;font-size:13px;color:#5c6bc0">GRUP D'ORDRE — Mossos / Policia / GC</div>
+          <div style="font-size:12px;margin-top:4px;line-height:1.7">
+            • Perímetre de seguretat i control d'accés<br>
+            • Organitza el <strong>Punt d'Ambulàncies</strong> conjuntament amb TES SEM<br>
+            • Regulació del trànsit i dels accessos<br>
+            • En atemptat: neutralització amenaça PRIMER, el SEM espera<br>
+            • Identifica víctimes (amb SEM i judicial si cal)<br>
+            • Gestió de familiars i premsa fora del perímetre
+          </div>
+        </td>
+        <td style="font-size:11px;color:var(--muted)">Zona freda<br>Perímetre</td>
+      </tr>
+      <tr>
+        <td class="serv-icon">🚑</td>
+        <td>
+          <div style="font-weight:800;font-size:13px;color:var(--orange)">GRUP SANITARI — SEM</div>
+          <div style="font-size:12px;margin-top:4px;line-height:1.7">
+            • Triatge, tractament i evacuació de víctimes<br>
+            • Gestió de l'Àrea Sanitària (AS)<br>
+            • Exclusivament zona freda (o tèbia amb EPI adequat en RNBQ)<br>
+            • Informa periòdicament al CECOS via Alfa Sierra<br>
+            • Coordina evacuació amb hospitals receptors via Papa Echo
+          </div>
+        </td>
+        <td style="font-size:11px;color:var(--muted)">Zona freda<br>AS / PMA</td>
+      </tr>
+      <tr>
+        <td class="serv-icon">🏛️</td>
+        <td>
+          <div style="font-weight:800;font-size:13px;color:#78909c">PROTECCIÓ CIVIL / CECAT</div>
+          <div style="font-size:12px;margin-top:4px;line-height:1.7">
+            • Suport logístic (catàstrofes naturals, Nivell III-IV)<br>
+            • Coordinació interadministrativa<br>
+            • Gestió d'albergs i acollida de desplaçats<br>
+            • Activació en Nivell III/IV o catàstrofe natural
+          </div>
+        </td>
+        <td style="font-size:11px;color:var(--muted)">Suport<br>Logística</td>
+      </tr>
+      <tr>
+        <td class="serv-icon">🧠</td>
+        <td>
+          <div style="font-weight:800;font-size:13px;color:#ab47bc">PSICÒLEGS SEM</div>
+          <div style="font-size:12px;margin-top:4px;line-height:1.7">
+            • Pre-alerta des de Nivell I<br>
+            • Activació en Nivell II<br>
+            • Atenció psicològica a víctimes lleus (verds) i familiars<br>
+            • Acompanyament zona negres<br>
+            • Suport a professionals si cal
+          </div>
+        </td>
+        <td style="font-size:11px;color:var(--muted)">Zona freda<br>Familiars</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- PUNTS DE COORDINACIÓ CLAU -->
+  <div class="card">
+    <div class="card-title">Punts de coordinació obligatoris en arribar</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="noria-step">
+        <div class="noria-num" style="background:var(--orange)">1</div>
+        <div class="noria-text">
+          <strong>Alfa Sierra → Comandament Bombers</strong><br>
+          <span style="font-size:12px;color:var(--muted)">Definir ubicació física de l'AS. Establir perímetre. Confirmar zona calenta/freda.</span>
+        </div>
+      </div>
+      <div class="noria-step">
+        <div class="noria-num" style="background:var(--orange)">2</div>
+        <div class="noria-text">
+          <strong>TES SEM → Grup d'Ordre</strong><br>
+          <span style="font-size:12px;color:var(--muted)">Definir i organitzar el Punt d'Ambulàncies. Accés unidireccional. Regulació vehicles.</span>
+        </div>
+      </div>
+      <div class="noria-step">
+        <div class="noria-num" style="background:var(--orange)">3</div>
+        <div class="noria-text">
+          <strong>Alfa Sierra → CECOS (EME1_CAT)</strong><br>
+          <span style="font-size:12px;color:var(--muted)">Confirmar AS operativa. Nº víctimes. Necessitat recursos. Activació nivell IMV.</span>
+        </div>
+      </div>
+      <div class="noria-step">
+        <div class="noria-num" style="background:#37474f)">4</div>
+        <div class="noria-text">
+          <strong>CECOS → CO / CCA (D_1)</strong><br>
+          <span style="font-size:12px;color:var(--muted)">Informa Director/Coordinador Territorial. Activa pre-alerta hospitals. Activa psicòlegs.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ZONES DE SEGURETAT -->
+  <div class="card">
+    <div class="card-title">Zonificació de seguretat (model SHELTER)</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="border-radius:6px;padding:10px;background:rgba(229,57,53,.15);border:1px solid var(--red)">
+        <div style="font-weight:800;font-size:13px;color:var(--red-l)">🔴 ZONA CALENTA — Exclusiva Bombers/Rescat</div>
+        <div style="font-size:12px;margin-top:4px;color:var(--muted)">Epicentre de l'incident. Risc actiu. SEM no hi accedeix. Víctimes extraïdes per Bombers cap a zona tèbia/freda.</div>
+      </div>
+      <div style="border-radius:6px;padding:10px;background:rgba(251,140,0,.15);border:1px solid var(--orange)">
+        <div style="font-weight:800;font-size:13px;color:#ffcc80">🟠 ZONA TÈBIA — Triatge bàsic i descontaminació</div>
+        <div style="font-size:12px;margin-top:4px;color:var(--muted)">Entre zona calenta i freda. Triatge START inicial. En RNBQ: descontaminació aquí. SEM amb EPI si autoritzat.</div>
+      </div>
+      <div style="border-radius:6px;padding:10px;background:rgba(30,136,229,.1);border:1px solid var(--blue)">
+        <div style="font-weight:800;font-size:13px;color:#90caf9">🔵 ZONA FREDA — Àrea Sanitària (AS/PMA)</div>
+        <div style="font-size:12px;margin-top:4px;color:var(--muted)">Fora del perill actiu. Aquí s'estableix l'AS. Triatge avançat META, tractament i evacuació. Comandaments, logística, familiars (zona separada).</div>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('content').appendChild(tab);
+  renderOrgDiagram('generic');
+}
+
+const orgDiagrams={
+  generic:`<div class="org-tree">
+    <div class="org-node">
+      <div class="org-box ob-cecos" style="padding:10px 18px"><div style="font-size:10px;opacity:.7">Central de Coordinació</div><div style="font-weight:800">CECOS</div><div style="font-size:10px;opacity:.6">EME1_CAT · EME2_CAT · D_1</div></div>
+      <div class="org-line-v"></div>
+      <div class="org-box" style="background:#37474f;color:#fff;border-radius:6px;padding:8px 14px;text-align:center"><div style="font-size:13px;font-weight:900;color:#ce93d8">D0</div><div style="font-size:11px">Resp. Sanitari Gabinet Crisi</div><div style="font-size:10px;opacity:.6">No mana a la zona</div></div>
+      <div class="org-line-v"></div>
+      <div class="org-box" style="background:#6a1b9a;color:#fff;border-radius:6px;padding:8px 14px;text-align:center"><div style="font-size:15px;font-weight:900">K0</div><div style="font-size:11px">Representant Sanitari al CCA</div><div style="font-size:10px;opacity:.7">Únic interlocutor cadena comandament</div></div>
+      <div class="org-line-v"></div>
+      <div class="org-children" style="align-items:flex-start">
+        <div class="org-child" style="flex:0.8">
+          <div class="org-box ob-llink" style="font-size:11px;padding:7px"><div style="font-weight:800;color:#cfd8dc">ENLLAÇ K0</div><div>Comunicació AS↔CCA</div><div style="color:#a5d6a7;font-size:10px">Canal propi → CECOS filiació</div></div>
+        </div>
+        <div class="org-child" style="flex:2">
+          <div class="org-box ob-cas"><div style="font-size:15px;font-weight:900">K1</div><div style="font-size:11px;font-weight:700">Líder Àrea Sanitària</div><div style="font-size:10px">Indicatiu emissora: "Kilo 1"</div></div>
+          <div class="org-line-v"></div>
+          <div class="org-children" style="padding-top:12px">
+            <div class="org-child"><div class="org-box ob-access" style="font-size:10px;padding:6px"><div style="font-weight:700">PORTA AS</div><div>Control accés</div></div></div>
+            <div class="org-child"><div class="org-box ob-triage" style="font-size:10px;padding:6px"><div style="font-weight:700">T.ESTAB.</div><div>Porta vermells</div><div>META</div></div></div>
+            <div class="org-child"><div class="org-box ob-red" style="font-size:10px;padding:6px"><div style="font-weight:700">Z.VERMELLS</div><div>P1 Metge+DUI</div></div></div>
+            <div class="org-child"><div class="org-box ob-yellow" style="font-size:10px;padding:6px"><div style="font-weight:700">Z.GROCS</div><div>P2 DUI/TTS</div></div></div>
+            <div class="org-child"><div class="org-box ob-green" style="font-size:10px;padding:6px"><div style="font-weight:700">Z.VERDS</div><div>P3 TTS</div></div></div>
+            <div class="org-child"><div class="org-box ob-evacuation" style="font-size:10px;padding:6px"><div style="font-weight:800">K2</div><div>Punt Evacuació</div><div style="color:#b3e5fc">"Punt d'Evac." → CECOS</div></div></div>
+            <div class="org-child"><div class="org-box" style="background:#00695c;color:#fff;border-radius:6px;padding:6px;font-size:10px;text-align:center"><div style="font-weight:800">K3</div><div>Noria Evacuació</div><div>TTS/TES</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`,
+  atm:`<div class="org-tree"><div class="alert-box alert-blue" style="margin-bottom:10px;font-size:12px"><strong>ATM:</strong> Bombers lidera zona calenta. SEM: triatge des del 1r vehicle. Coordinació Grup Ordre tall de via.</div>
+    <div class="org-node">
+      <div class="org-box ob-cecos"><div style="font-size:11px">Coordinació CECOS</div><div style="font-weight:800">Central + UCO</div></div>
+      <div class="org-line-v"></div>
+      <div class="org-children">
+        <div class="org-child"><div class="org-box" style="background:#c62828;color:#fff;border-radius:6px;padding:8px;font-size:11px;text-align:center"><strong>Bombers</strong><div>Zona Calenta</div><div style="font-size:10px;opacity:.8">Rescat / Extricació</div></div></div>
+        <div class="org-child"><div class="org-box ob-cas"><div style="font-size:10px">ALFA SIERRA</div><div style="font-weight:800">Líder AS SEM</div></div>
+          <div class="org-line-v"></div>
+          <div class="org-children" style="padding-top:10px">
+            <div class="org-child"><div class="org-box ob-triage" style="font-size:11px;padding:6px">T.Estab.<br><small>Porta PMA</small></div></div>
+            <div class="org-child"><div class="org-box ob-red" style="font-size:11px;padding:6px">Vermells<br><small>Metge+DUI</small></div></div>
+            <div class="org-child"><div class="org-box ob-yellow" style="font-size:11px;padding:6px">Grocs<br><small>DUI/TTS</small></div></div>
+            <div class="org-child"><div class="org-box ob-evacuation" style="font-size:11px;padding:6px">PAPA ECHO<br><small>Evacuació</small></div></div>
+          </div>
+        </div>
+        <div class="org-child"><div class="org-box" style="background:#1565c0;color:#fff;border-radius:6px;padding:8px;font-size:11px;text-align:center"><strong>Mossos/Policia</strong><div>Perímetre</div><div style="font-size:10px;opacity:.8">Tall de via / Trànsit</div></div></div>
+      </div>
+    </div></div>`,
+  incendi:`<div class="org-tree"><div class="alert-box alert-red" style="margin-bottom:10px;font-size:12px"><strong>INCENDI:</strong> Esperar autorització Bombers per entrar zona. Alerta CO (pulsioximetria no fiable). Blast si explosió: TCE + polipolitrauma.</div>
+    <div class="org-node">
+      <div class="org-box ob-cecos"><div style="font-size:11px">CECOS + Protecció Civil</div><div style="font-weight:800">Coordinació</div></div>
+      <div class="org-line-v"></div>
+      <div class="org-children">
+        <div class="org-child"><div class="org-box" style="background:#bf360c;color:#fff;border-radius:6px;padding:8px;font-size:11px;text-align:center"><strong>Bombers</strong><div>Zona Calenta+Tèbia</div><div style="font-size:10px">Extinció / EPI Nivell A</div></div></div>
+        <div class="org-child"><div class="org-box ob-cas"><div style="font-size:10px">ALFA SIERRA</div><div style="font-weight:800">Líder AS SEM</div><div style="font-size:10px">Zona Freda</div></div>
+          <div class="org-line-v"></div>
+          <div class="org-children" style="padding-top:10px">
+            <div class="org-child"><div class="org-box ob-red" style="font-size:11px;padding:6px">Vermells<br><small>Cremades+CO</small></div></div>
+            <div class="org-child"><div class="org-box ob-yellow" style="font-size:11px;padding:6px">Grocs<br><small>Intoxicats CO</small></div></div>
+            <div class="org-child"><div class="org-box ob-green" style="font-size:11px;padding:6px">Verds<br><small>Lleus/Fum</small></div></div>
+            <div class="org-child"><div class="org-box ob-evacuation" style="font-size:11px;padding:6px">PAPA ECHO<br><small>Hospitals+Brulòleg</small></div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>`,
+  rnbq:`<div class="org-tree"><div class="alert-box alert-red" style="margin-bottom:10px;font-size:12px"><strong>RNBQ:</strong> SEM EXCLUSIVAMENT en zona freda. Descontaminació PRÈVIA per Bombers/TEDAX. EPI adequat al risc. Antídots específics si QUÍM.</div>
+    <div class="org-node">
+      <div class="org-box ob-cecos"><div style="font-size:11px">CECOS + CECOP/CECAT</div><div style="font-weight:800">Mando Unificat</div></div>
+      <div class="org-line-v"></div>
+      <div class="org-children">
+        <div class="org-child" style="flex:2"><div style="display:flex;flex-direction:column;gap:6px">
+          <div class="org-box" style="background:#4a148c;color:#fff;border-radius:6px;padding:8px;font-size:11px;text-align:center"><strong>ZONA CALENTA</strong><div>TEDAX/Bombers NRBQ</div><div style="font-size:10px;opacity:.8">Identificació agent. EPI Nivell A</div></div>
+          <div class="org-box" style="background:#6a1b9a;color:#fff;border-radius:6px;padding:8px;font-size:11px;text-align:center"><strong>ZONA TÈBIA</strong><div>Descontaminació</div><div style="font-size:10px;opacity:.8">Bombers. Dutxa desc. Personal SEM AMB EPI</div></div>
+          <div class="org-box ob-cas"><div style="font-size:10px">ALFA SIERRA · ZONA FREDA</div><div style="font-weight:800">Líder AS SEM</div>
+          </div>
+        </div></div>
+        <div class="org-child"><div class="org-box ob-red" style="font-size:11px;padding:8px">Vermells<br><small>Post-desc.</small></div></div>
+        <div class="org-child"><div class="org-box ob-yellow" style="font-size:11px;padding:8px">Grocs<br><small>Post-desc.</small></div></div>
+        <div class="org-child"><div class="org-box ob-evacuation" style="font-size:11px;padding:8px">PAPA ECHO<br><small>Hospitals espec.</small></div></div>
+      </div>
+    </div></div>`,
+  atemptat:`<div class="org-tree"><div class="alert-box alert-red" style="margin-bottom:10px;font-size:12px"><strong>ATEMPTAT:</strong> Seguretat de la zona PRIMER. Possible 2n atac. Alerta artefactes secundaris. TCC predominant. Coordinació Antiterrorisme.</div>
+    <div class="org-node">
+      <div class="org-box ob-cecos"><div style="font-size:11px">CECOS + Policia/CNP</div><div style="font-weight:800">Mando Conjunt</div></div>
+      <div class="org-line-v"></div>
+      <div class="org-children">
+        <div class="org-child"><div class="org-box" style="background:#1a237e;color:#fff;border-radius:6px;padding:8px;font-size:11px;text-align:center"><strong>Policia/GEO</strong><div>Zona Calenta</div><div style="font-size:10px;opacity:.8">Neutralització amenaça</div></div></div>
+        <div class="org-child"><div class="org-box ob-cas"><div style="font-size:10px">ALFA SIERRA</div><div style="font-weight:800">Líder AS SEM</div><div style="font-size:10px">Zona Freda (autoritzada)</div></div>
+          <div class="org-line-v"></div>
+          <div class="org-children" style="padding-top:10px">
+            <div class="org-child"><div class="org-box ob-triage" style="font-size:11px;padding:6px">T.Estab.<br><small>TCE/Blast</small></div></div>
+            <div class="org-child"><div class="org-box ob-red" style="font-size:11px;padding:6px">Vermells<br><small>TCE+Politraume</small></div></div>
+            <div class="org-child"><div class="org-box ob-evacuation" style="font-size:11px;padding:6px">PAPA ECHO<br><small>Trauma centres</small></div></div>
+          </div>
+        </div>
+        <div class="org-child"><div class="org-box" style="background:#c62828;color:#fff;border-radius:6px;padding:8px;font-size:11px;text-align:center"><strong>Bombers</strong><div>Suport</div><div style="font-size:10px;opacity:.8">Si incendi/explosió</div></div></div>
+      </div>
+    </div></div>`
+};
+function setOrgType(type,btn){
+  document.querySelectorAll('#org-type-btns .otb').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');renderOrgDiagram(type);
+}
+function renderOrgDiagram(type){
+  const el=document.getElementById('org-diagram');
+  if(el)el.innerHTML=`<div class="card" style="overflow-x:auto">${orgDiagrams[type]||orgDiagrams.generic}</div>`;
+}
+
+function buildFitxesTab(){
+  const tab=document.createElement('section');
+  tab.className='tab';tab.id='tab-fitxes';
+  tab.innerHTML=`
+  <div class="role-tabs" id="fitxa-role-tabs">
+    <button class="role-tab active" onclick="selectFitxa('metge_svа',this)">🩺 Metge SVA</button>
+    <button class="role-tab" onclick="selectFitxa('dui_svа',this)">💉 DUI SVA</button>
+    <button class="role-tab" onclick="selectFitxa('tes_svа',this)">🚑 TTS/TES SVA</button>
+    <button class="role-tab" onclick="selectFitxa('tes_sense',this)">⚠️ TTS Sense SVA</button>
+    <button class="role-tab" onclick="selectFitxa('pe',this)">📤 Papa Echo</button>
+    <button class="role-tab" onclick="selectFitxa('llac',this)">📋 Enllaç D</button>
+  </div>
+  <div class="card" id="cl-container"><div style="color:var(--muted);font-size:13px">Selecciona un rol per veure la fitxa operativa.</div></div>
+  <div class="section-title">Comunicat tipus CECOS (EME1_CAT)</div>
+  <div class="card">
+    <div class="card-title">Líder AS → CECOS (actualització periòdica)</div>
+    <div style="background:var(--surface3);border-radius:6px;padding:10px;font-family:monospace;font-size:12px;line-height:1.8;color:var(--green-l)">
+      "ALFA SIERRA per CECOS [canal EME1_CAT]<br>
+      — Nivell IMV: [I / II / III]<br>
+      — Víctimes: [X] vermells / [X] grocs / [X] verds / [X] negres<br>
+      — AS operativa: [SÍ/NO]<br>
+      — Necessitat recursos: [SVA / SVB / Heli / Psicòlegs]<br>
+      — Estat evacuació: [X] evacuats / [X] pendents"
+    </div>
+  </div>
+  <div class="card" style="margin-top:0">
+    <div class="card-title">Papa Echo → CECOS (per cada víctima — EME1_CAT)</div>
+    <div style="background:var(--surface3);border-radius:6px;padding:10px;font-family:monospace;font-size:12px;line-height:1.8;color:var(--green-l)">
+      "PAPA ECHO per CECOS<br>
+      — Víctima Nº: [ID]<br>
+      — Sexe: [H/D] · Edat: [aprox]<br>
+      — Diagnòstic: [categorització + lesió principal]<br>
+      — Ex: Vermell, fx oberta fèmur i TCE amb IOT<br>
+      — Unitat trasllat: [indicatiu / empresa si no SEM]<br>
+      → Esperant centre útil de CECOS"
+    </div>
+  </div>`;
+  document.getElementById('content').appendChild(tab);
+}
+function selectFitxa(key,btn){
+  document.querySelectorAll('#fitxa-role-tabs .role-tab').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderChecklist(key);
+}
+
+function buildRadioTab(){
+  const tab=document.createElement('section');
+  tab.className='tab';tab.id='tab-radio';
+  tab.innerHTML=`
+  <!-- ── INDICATIUS KILO — ROLS A L'IMV (Annex 5 SEM) ── -->
+  <div class="section-title">Indicatius Kilo — Rols a l'IMV</div>
+  <div class="alert-box alert-yellow" style="margin-bottom:10px;font-size:12px">
+    Font: <strong>Annex 5 SEM — Organigrama Organització Operativa al Lloc de l'IMV</strong><br>
+    Els indicatius Kilo identifiquen rols/funcions, no estat de les unitats. S'assignen a l'inici de l'incident.
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse">
+      <tr style="background:var(--surface3)">
+        <th style="padding:9px 10px;font-size:11px;color:var(--muted)">Indicatiu</th>
+        <th style="padding:9px 10px;font-size:11px;color:var(--muted)">Rol / Funció</th>
+        <th style="padding:9px 10px;font-size:11px;color:var(--muted)">Reporta a</th>
+      </tr>
+      <!-- D0 -->
+      <tr style="border-bottom:1px solid var(--border);background:rgba(123,31,162,.08)">
+        <td style="padding:10px;font-family:monospace;font-weight:900;color:#ce93d8;font-size:16px">D0</td>
+        <td style="padding:10px;font-size:12px">
+          <strong>Responsable Assistència Sanitària</strong><br>
+          <span style="color:var(--muted)">Membre del Gabinet de Crisi (GC). Comandament territorial. <em>No mana a la zona: recolza les necessitats.</em> Anomena K0 i K1. Sol·licita recursos. Informat per K0 periòdicament.</span>
+        </td>
+        <td style="padding:10px;font-size:11px;color:var(--muted)">Autoritat<br>(Gabinet Crisi)</td>
+      </tr>
+      <!-- K0 -->
+      <tr style="border-bottom:1px solid var(--border);background:rgba(123,31,162,.05)">
+        <td style="padding:10px;font-family:monospace;font-weight:900;color:#ab47bc;font-size:16px">K0</td>
+        <td style="padding:10px;font-size:12px">
+          <strong>Representant Sanitari al CCA</strong> (Lloc de Comandament Avançat)<br>
+          <span style="color:var(--muted)">Sempre present al CCA. Únic interlocutor vàlid amb la cadena de comandament. Garanteix l'assistència i evacuació de tots els afectats. Designa l'Enllaç. Evita acumulació desordenada d'ambulàncies. Informa D0 de la situació.</span>
+        </td>
+        <td style="padding:10px;font-size:11px;color:var(--muted)">D0</td>
+      </tr>
+      <!-- ENLLAÇ K0 -->
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:10px;font-family:monospace;font-weight:900;color:#b0bec5;font-size:13px">ENLLAÇ<br>(de K0)</td>
+        <td style="padding:10px;font-size:12px">
+          <strong>Comunicacions AS ↔ CCA</strong> (designat per K0)<br>
+          <span style="color:var(--muted)">Autonomia de comunicacions. Canal diferent al canal de treball de l'AS per comunicar amb CECOS. Recopila nº víctimes i gravetat de cada zona. Passa filiació a CECOS. Marca amb retolador l'últim pacient comunicat per evitar duplicitats.</span>
+        </td>
+        <td style="padding:10px;font-size:11px;color:var(--muted)">K0</td>
+      </tr>
+      <!-- K1 -->
+      <tr style="border-bottom:1px solid var(--border);background:rgba(251,140,0,.06)">
+        <td style="padding:10px;font-family:monospace;font-weight:900;color:var(--orange);font-size:16px">K1</td>
+        <td style="padding:10px;font-size:12px">
+          <strong>Líder Àrea Sanitària</strong><br>
+          <span style="color:var(--muted)">Personal sanitari més capacitat dels presents, independentment de categoria. Indicatiu en emissora: <strong>"Kilo 1"</strong>. Reparteix tots els rols. Dimensiona el problema. Evita evacuacions salvatges. Informa K0. Assumeix K2 si no hi ha prou recursos.</span>
+        </td>
+        <td style="padding:10px;font-size:11px;color:var(--muted)">K0</td>
+      </tr>
+      <!-- PORTA AS -->
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:10px;font-family:monospace;font-weight:900;color:#78909c;font-size:12px">PORTA AS</td>
+        <td style="padding:10px;font-size:12px">
+          <strong>Control accés a l'AS</strong> (designat per K1)<br>
+          <span style="color:var(--muted)">Pot ser delegat al Grup d'Ordre. Regula el flux de víctimes. Comprova que totes han estat triades. Comptabilitza víctimes per color. Informa l'Enllaç si se li sol·licita.</span>
+        </td>
+        <td style="padding:10px;font-size:11px;color:var(--muted)">K1</td>
+      </tr>
+      <!-- T. ESTABILITZACIÓ -->
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:10px;font-family:monospace;font-weight:900;color:var(--red-l);font-size:12px">T.ESTAB.</td>
+        <td style="padding:10px;font-size:12px">
+          <strong>Triatge d'Estabilització — porta zona vermells</strong><br>
+          <span style="color:var(--muted)">Metge o infermer. Metodologia META (ABCDE). Valora prioritat quirúrgica. Col·loca targetes triatge avançat. Es manté en el rol fins acabar tots els vermells.</span>
+        </td>
+        <td style="padding:10px;font-size:11px;color:var(--muted)">K1</td>
+      </tr>
+      <!-- ZONA VERMELLS -->
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:10px;font-family:monospace;font-weight:900;color:var(--red-l);font-size:12px">Z.VERMELLS</td>
+        <td style="padding:10px;font-size:12px">
+          <strong>Responsable zona P1</strong> (designat per K1)<br>
+          <span style="color:var(--muted)">Metge/DUI. Assistència als vermells. Omple full filiació. Informa l'Enllaç K0 quan se li sol·licita. Informa K2 de l'estat d'estabilització. Traspassa el full a K2 quan s'inicia evacuació.</span>
+        </td>
+        <td style="padding:10px;font-size:11px;color:var(--muted)">K1 / Informa Enllaç K0</td>
+      </tr>
+      <!-- ZONA GROCS -->
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:10px;font-family:monospace;font-weight:900;color:var(--yellow-l);font-size:12px">Z.GROCS</td>
+        <td style="padding:10px;font-size:12px">
+          <strong>Responsable zona P2</strong> (designat per K1)<br>
+          <span style="color:var(--muted)">DUI/TTS. Col·loca targetes. Omple full filiació. Informa l'Enllaç K0. Informa K2 de situació. Traspassa full a K2.</span>
+        </td>
+        <td style="padding:10px;font-size:11px;color:var(--muted)">K1 / Informa Enllaç K0</td>
+      </tr>
+      <!-- ZONA VERDS -->
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:10px;font-family:monospace;font-weight:900;color:var(--green-l);font-size:12px">Z.VERDS</td>
+        <td style="padding:10px;font-size:12px">
+          <strong>Responsable zona P3</strong> (designat per K1)<br>
+          <span style="color:var(--muted)">TTS. Separa lleus d'il·lesos. Il·lesos → Grup d'Ordre (no es filien). Col·loca targetes. Omple full filiació. Informa Enllaç K0. <em>TTS conductors NO assumeixen aquest rol.</em></span>
+        </td>
+        <td style="padding:10px;font-size:11px;color:var(--muted)">K1 / Informa Enllaç K0</td>
+      </tr>
+      <!-- K2 -->
+      <tr style="border-bottom:1px solid var(--border);background:rgba(30,136,229,.06)">
+        <td style="padding:10px;font-family:monospace;font-weight:900;color:#90caf9;font-size:16px">K2</td>
+        <td style="padding:10px;font-size:12px">
+          <strong>Responsable Punt d'Evacuació de Pacients</strong><br>
+          <span style="color:var(--muted)">Indicatiu en emissora: <strong>"Punt d'Evacuació"</strong>. Metge o DUI (si no n'hi ha, l'assumeix K1). Aplica Triatge d'Evacuació (META). Comunica amb CECOS per evacuació. Rep fulls de filiació de les zones. Decideix dotació assistencial de cada ambulància.</span>
+        </td>
+        <td style="padding:10px;font-size:11px;color:var(--muted)">K1</td>
+      </tr>
+      <!-- K3 -->
+      <tr>
+        <td style="padding:10px;font-family:monospace;font-weight:900;color:#80cbc4;font-size:16px">K3</td>
+        <td style="padding:10px;font-size:12px">
+          <strong>Responsable Noria d'Evacuació</strong><br>
+          <span style="color:var(--muted)">TTS/TES amb més experiència a la zona. Designat per K1. Organitza l'espai físic del PE. Controla flux d'ambulàncies (entrada/sortida unidireccional). Estableix helisuperfícies eventuals. Realitza les comunicacions del PE si K2 no té suport. <em>TTS conductors NO assumeixen altres rols.</em></span>
+        </td>
+        <td style="padding:10px;font-size:11px;color:var(--muted)">K1 / recolza K2</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ── ORGANIGRAMA COMUNICACIÓ (Annex 5) ── -->
+  <div class="section-title">Organigrama de Comunicació</div>
+  <div class="card" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+    <div class="comm-diagram">
+      <div class="comm-node">
+        <!-- CECOS -->
+        <div class="comm-box cb-cecos">
+          <div class="cb-ind">CECOS</div>
+          <div class="cb-rol">Central de Coordinació</div>
+          <div class="cb-ch">EME1_CAT · EME2_CAT · D_1</div>
+        </div>
+        <div class="comm-arrow"><div class="ca-line"></div><div class="ca-ch">D_1</div><div class="ca-line"></div></div>
+        <!-- D0 -->
+        <div class="comm-box" style="background:#37474f;color:#fff;border-radius:8px;padding:8px 12px;text-align:center;min-width:140px">
+          <div class="cb-ind" style="color:#ce93d8">D0</div>
+          <div class="cb-rol">Resp. Sanitari Gabinet de Crisi</div>
+          <div class="cb-ch">No mana a la zona</div>
+        </div>
+        <div class="comm-arrow"><div class="ca-line"></div><div class="ca-ch" style="background:rgba(171,71,188,.2);color:#ce93d8">informa</div><div class="ca-line"></div></div>
+        <!-- K0 -->
+        <div class="comm-box" style="background:#6a1b9a;color:#fff;border-radius:8px;padding:8px 12px;text-align:center;min-width:140px">
+          <div class="cb-ind" style="font-size:18px">K0</div>
+          <div class="cb-rol">Representant Sanitari al CCA</div>
+          <div class="cb-ch">Únic interlocutor amb la cadena de comandament</div>
+        </div>
+        <div class="comm-arrow"><div class="ca-line"></div><div class="ca-ch">designa + informa</div><div class="ca-line"></div></div>
+        <!-- FILA: Enllaç K0 + K1 -->
+        <div class="comm-row" style="padding-top:20px">
+          <!-- ENLLAÇ -->
+          <div class="comm-child">
+            <div class="comm-box cb-ld" style="border:1px solid #555">
+              <div class="cb-ind" style="color:#cfd8dc">ENLLAÇ K0</div>
+              <div class="cb-rol">Comunicació AS↔CCA</div>
+              <div class="cb-ch" style="color:#a5d6a7">→ CECOS filiació (canal propi)</div>
+            </div>
+          </div>
+          <!-- K1 -->
+          <div class="comm-child">
+            <div class="comm-box cb-cas">
+              <div class="cb-ind" style="font-size:18px">K1</div>
+              <div class="cb-rol">Líder Àrea Sanitària</div>
+              <div class="cb-ch">Canal treball AS</div>
+            </div>
+          </div>
+        </div>
+        <!-- FILA: zones sota K1 -->
+        <div style="display:flex;gap:5px;justify-content:center;width:100%;position:relative;padding-top:18px;margin-top:2px">
+          <div style="position:absolute;top:0;left:25%;right:5%;height:2px;background:var(--border)"></div>
+          ${['T.ESTAB|Porta vermells|var(--red-l)','Z.VERMELLS|Zona P1|var(--red-l)','Z.GROCS|Zona P2|var(--yellow-l)','Z.VERDS|Zona P3|var(--green-l)','K2|Punt Evac.|#90caf9','K3|Noria|#80cbc4'].map(s=>{
+            const [ind,rol,col]=s.split('|');
+            return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative">
+              <div style="position:absolute;top:-18px;left:50%;width:2px;height:18px;background:var(--border)"></div>
+              <div style="border-radius:6px;padding:6px 4px;text-align:center;background:var(--surface2);border:1px solid var(--border);width:100%">
+                <div style="font-family:monospace;font-weight:800;font-size:11px;color:${col}">${ind}</div>
+                <div style="font-size:10px;color:var(--muted);margin-top:1px">${rol}</div>
+              </div>
+            </div>`;}).join('')}
+        </div>
+        <!-- ZONA: K2 comunica amb CECOS -->
+        <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;line-height:1.9;width:100%">
+          <div style="font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Flux de comunicació (Annex 5)</div>
+          <span style="color:var(--green-l)">Zones (Vermells/Grocs/Verds)</span> → informen <span style="color:#cfd8dc">Enllaç K0</span> (nº víctimes, gravetat, filiació)<br>
+          <span style="color:#cfd8dc">Enllaç K0</span> → <span style="color:var(--yellow)">CECOS</span> per canal propi (filiació afectats)<br>
+          <span style="color:#cfd8dc">Enllaç K0</span> → <span style="color:#ab47bc">K0</span> (situació AS en el temps que es determini)<br>
+          <span style="color:#90caf9">K2 "Punt d'Evacuació"</span> → <span style="color:var(--yellow)">CECOS</span>: etiqueta · diagnòstic · prioritat · unitat · proposta centre<br>
+          Unitats trasllat → CECOS: <strong>3.6</strong> al lloc / <strong>3.10</strong> AS — <em>No transmeten dades clíniques</em>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CANALS PER NIVELL ── -->
+  <div class="section-title">Canals actius per Nivell IMV</div>
+  ${Object.entries(channelsByLevel).map(([lvl,chs])=>`
+  <div class="card" style="margin-bottom:8px">
+    <div class="card-title">Nivell ${lvl} — Canals a activar</div>
+    ${chs.map(c=>`<div class="channel-card" style="background:var(--surface2)">
+      <div class="ch-name">📡 ${c.name}</div>
+      <div class="ch-desc">${c.desc}</div>
+      <div class="ch-use" style="font-size:12px;margin-top:4px">${c.use}</div>
+    </div>`).join('')}
+  </div>`).join('')}
+
+  <!-- ── COMUNICACIÓ K2 → CECOS ── -->
+  <div class="section-title">Comunicat K2 → CECOS (per cada víctima)</div>
+  <div class="card">
+    <div style="background:var(--surface3);border-radius:6px;padding:12px;font-family:monospace;font-size:12px;line-height:2;color:var(--green-l)">
+      "PUNT D'EVACUACIÓ per CECOS<br>
+      — Etiqueta Nº: [número targeta triatge]<br>
+      — Orientació diagnòstica: [lesió principal]<br>
+      — Categorització: [Vermell/Groc/Verd] · Prioritat: [1a/2a/3a...]<br>
+      — Unitat: [indicatiu] · Nivell: [SVB/SVI/SVA]<br>
+      — Proposta centre: [hospital de referència]"<br>
+      <span style="color:var(--muted)">→ CECOS confirma centre útil</span>
+    </div>
+    <div class="alert-box alert-blue" style="margin-top:10px;font-size:12px">
+      La resta de dades (identificació, nacionalitat, edat) ja les ha transmès l'<strong>Enllaç K0</strong> a CECOS durant l'assistència.
+    </div>
+  </div>
+
+  <!-- ── CODIS NUMÈRICS ── -->
+  <div class="section-title">Codis numèrics SEM</div>
+  <div class="card">
+    <table class="kilo-table">
+      <tr><th>Codi</th><th>Significat</th><th>Qui</th></tr>
+      <tr><td class="kilo-code">3.6</td><td style="font-size:13px;font-weight:600">Al lloc / a l'AS</td><td style="font-size:12px;color:var(--muted)">Unitat en arribar. NO dóna dades del pacient.</td></tr>
+      <tr><td class="kilo-code">3.10</td><td style="font-size:13px;font-weight:600">A l'hospital de destí</td><td style="font-size:12px;color:var(--muted)">Unitat en arribar al centre receptor.</td></tr>
+    </table>
+  </div>`;
+  document.getElementById('content').appendChild(tab);
+}
+
+function buildContactesTab(){
+  const tab=document.createElement('section');
+  tab.className='tab';tab.id='tab-contactes';
+  tab.innerHTML=`
+  <div class="card-title" style="margin-bottom:8px">Toca el número per trucar · Icona ✏️ per editar</div>
+  <div class="card" id="contacts-list"></div>
+  <button class="btn btn-grey" style="margin-top:10px" onclick="addContact()">+ Afegir contacte</button>`;
+  document.getElementById('content').appendChild(tab);
+}
+function addContact(){
+  const name=prompt('Nom del contacte:');if(!name)return;
+  const number=prompt('Número de telèfon:');if(number===null)return;
+  const maxId=Math.max(0,...S.contacts.map(c=>c.id));
+  S.contacts.push({id:maxId+1,icon:'📞',name,number:number.trim()});
+  saveState();renderContacts();
+}
+
+// ═══════════════════ BOOT ═══════════════════
+loadState();
+buildOrganigramaTab();
+buildFitxesTab();
+buildRadioTab();
+buildContactesTab();
+updateAllCounters();
+renderContacts();
+if(S.incident.active)updateIncidentUI();
+</script>
+</body>
+</html>
